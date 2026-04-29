@@ -35,6 +35,7 @@ export function ScreenContainer({
     <SafeAreaView style={[styles.safeArea, style]} edges={['top']}>
       <ScrollView
         contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {children}

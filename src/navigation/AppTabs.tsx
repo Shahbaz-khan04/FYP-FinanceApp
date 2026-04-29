@@ -53,23 +53,26 @@ export function AppTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.brandPrimary,
-        tabBarInactiveTintColor: colors.brandSecondary,
+        tabBarInactiveTintColor: '#A4AAA4',
         tabBarStyle: {
           position: 'absolute',
-          left: spacing.md,
-          right: spacing.md,
-          bottom: spacing.lg,
+          left: spacing.lg,
+          right: spacing.lg,
+          bottom: spacing.md,
           borderTopWidth: 0,
           backgroundColor: colors.neutral,
-          borderRadius: radius.xl,
-          height: 72,
-          paddingBottom: spacing.sm,
+          borderRadius: radius.lg,
+          height: 70,
+          paddingBottom: spacing.xs,
           paddingTop: spacing.xs,
+          borderWidth: 1,
+          borderColor: 'rgba(27, 67, 50, 0.08)',
           ...shadows.card,
         },
         tabBarLabelStyle: {
-          fontSize: typography.size.xs,
+          fontSize: 10,
           fontWeight: typography.weight.semibold,
+          textTransform: 'uppercase',
           marginBottom: spacing.xxs,
         },
         tabBarIcon: ({ focused, color, size }) => (
@@ -81,7 +84,7 @@ export function AppTabs() {
         ),
         tabBarItemStyle: {
           marginHorizontal: 2,
-          borderRadius: radius.md,
+          borderRadius: radius.sm,
         },
       })}
     >
@@ -96,6 +99,7 @@ export function AppTabs() {
         options={{
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
@@ -104,6 +108,7 @@ export function AppTabs() {
         options={{
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen

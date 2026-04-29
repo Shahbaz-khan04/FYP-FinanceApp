@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 
-import { DarkTheme, NavigationContainer, Theme } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
 import { TransactionsProvider } from './src/context/TransactionsContext';
@@ -8,9 +8,9 @@ import { AppTabs } from './src/navigation/AppTabs';
 import { colors } from './src/theme';
 
 const navigationTheme: Theme = {
-  ...DarkTheme,
+  ...DefaultTheme,
   colors: {
-    ...DarkTheme.colors,
+    ...DefaultTheme.colors,
     background: colors.background,
     card: colors.surface,
     border: colors.border,

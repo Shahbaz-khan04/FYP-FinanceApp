@@ -4,20 +4,20 @@ export const colors = {
   brandTertiary: '#362202',
   neutral: '#F9FAF6',
 
-  background: '#0E1512',
-  surface: '#131C18',
-  surfaceAlt: '#1A2520',
-  surfaceSoft: '#1F2C26',
+  background: '#F9FAF6',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F2F4F0',
+  surfaceSoft: '#E7E8E1',
 
-  textPrimary: '#F4F7F3',
-  textSecondary: '#C3CDC7',
-  textMuted: '#8F9E95',
+  textPrimary: '#1A1A18',
+  textSecondary: '#506354',
+  textMuted: '#747B75',
 
   success: '#2A9D8F',
   warning: '#E9C46A',
   danger: '#DD5D5D',
   info: '#89AFC9',
 
-  border: 'rgba(249, 250, 246, 0.09)',
-  shadow: 'rgba(0, 0, 0, 0.35)',
+  border: 'rgba(27, 67, 50, 0.10)',
+  shadow: 'rgba(23, 35, 27, 0.18)',
 };
