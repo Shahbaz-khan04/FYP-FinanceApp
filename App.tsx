@@ -3,6 +3,7 @@ import 'react-native-gesture-handler';
 import { DarkTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
+import { TransactionsProvider } from './src/context/TransactionsContext';
 import { AppTabs } from './src/navigation/AppTabs';
 import { colors } from './src/theme';
 
@@ -21,9 +22,11 @@ const navigationTheme: Theme = {
 
 export default function App() {
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style="dark" />
-      <AppTabs />
-    </NavigationContainer>
+    <TransactionsProvider>
+      <NavigationContainer theme={navigationTheme}>
+        <StatusBar style="dark" />
+        <AppTabs />
+      </NavigationContainer>
+    </TransactionsProvider>
   );
 }

@@ -3,24 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, ScreenContainer } from '../components/common';
+import { useTransactions } from '../context/TransactionsContext';
 import { RootTabParamList } from '../navigation/AppTabs';
 import { radius, shadows, spacing, typography } from '../theme';
 
 type TransactionsScreenProps = BottomTabScreenProps<RootTabParamList, 'Transactions'>;
-
-type LedgerTransaction = {
-  id: string;
-  merchant: string;
-  category: string;
-  date: string;
-  time: string;
-  currency: string;
-  amount: number;
-  note: string;
-  type: 'expense' | 'income';
-  icon: keyof typeof Ionicons.glyphMap;
-  tint: string;
-};
 
 const palette = {
   ink: '#1A1A18',
@@ -38,107 +25,14 @@ const palette = {
   aqua: '#BFF1D9',
 };
 
-const transactions: LedgerTransaction[] = [
-  {
-    id: 'tx-001',
-    merchant: 'The Gilded Fork',
-    category: 'Gastronomy',
-    date: 'Today',
-    time: '12:45 PM',
-    currency: 'USD',
-    amount: 184.2,
-    note: 'Business Lunch',
-    type: 'expense',
-    icon: 'restaurant',
-    tint: palette.gold,
-  },
-  {
-    id: 'tx-002',
-    merchant: 'Harrods Knightsbridge',
-    category: 'Lifestyle',
-    date: 'Today',
-    time: '10:15 AM',
-    currency: 'GBP',
-    amount: 2450,
-    note: 'Curated Apparel',
-    type: 'expense',
-    icon: 'bag-handle',
-    tint: palette.mint,
-  },
-  {
-    id: 'tx-003',
-    merchant: 'Client Retainer',
-    category: 'Income',
-    date: 'Today',
-    time: '09:20 AM',
-    currency: 'USD',
-    amount: 5200,
-    note: 'Nova Labs Project',
-    type: 'income',
-    icon: 'arrow-down',
-    tint: '#DFF7E8',
-  },
-  {
-    id: 'tx-004',
-    merchant: 'Edison Electric',
-    category: 'Utilities',
-    date: 'Yesterday',
-    time: '04:30 PM',
-    currency: 'USD',
-    amount: 342.15,
-    note: 'Residential Main',
-    type: 'expense',
-    icon: 'flash',
-    tint: palette.chip,
-  },
-  {
-    id: 'tx-005',
-    merchant: 'Shell Signature',
-    category: 'Transit',
-    date: 'Yesterday',
-    time: '09:00 AM',
-    currency: 'USD',
-    amount: 120,
-    note: 'Premium Refuel',
-    type: 'expense',
-    icon: 'car',
-    tint: palette.aqua,
-  },
-  {
-    id: 'tx-006',
-    merchant: 'Figma Professional',
-    category: 'Software',
-    date: 'Apr 22',
-    time: '02:18 PM',
-    currency: 'USD',
-    amount: 72,
-    note: 'Design Tools',
-    type: 'expense',
-    icon: 'desktop',
-    tint: '#E8ECE7',
-  },
-  {
-    id: 'tx-007',
-    merchant: 'Consulting Session',
-    category: 'Income',
-    date: 'Apr 21',
-    time: '11:00 AM',
-    currency: 'EUR',
-    amount: 950,
-    note: 'Strategy Workshop',
-    type: 'income',
-    icon: 'briefcase',
-    tint: '#DFF7E8',
-  },
-];
-
-const groups = [
-  { title: 'Today', items: transactions.filter((item) => item.date === 'Today') },
-  { title: 'Yesterday', items: transactions.filter((item) => item.date === 'Yesterday') },
-  { title: 'Earlier', items: transactions.filter((item) => item.date !== 'Today' && item.date !== 'Yesterday') },
-];
-
 export function TransactionsScreen({ navigation }: TransactionsScreenProps) {
+  const { transactions } = useTransactions();
+  const groups = [
+    { title: 'Today', items: transactions.filter((item) => item.date === 'Today') },
+    { title: 'Yesterday', items: transactions.filter((item) => item.date === 'Yesterday') },
+    { title: 'Earlier', items: transactions.filter((item) => item.date !== 'Today' && item.date !== 'Yesterday') },
+  ].filter((group) => group.items.length > 0);
+
   return (
     <ScreenContainer style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>

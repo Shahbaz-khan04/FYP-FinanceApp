@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, ScreenContainer } from '../components/common';
+import { useTransactions } from '../context/TransactionsContext';
 import { RootTabParamList } from '../navigation/AppTabs';
 import { radius, shadows, spacing, typography } from '../theme';
 
@@ -121,7 +122,27 @@ const splitPeople = [
 ];
 
 export function TransactionDetailScreen({ navigation, route }: TransactionDetailScreenProps) {
-  const transaction = detailById[route.params.transactionId] ?? fallbackDetail;
+  const { getTransactionById } = useTransactions();
+  const ledgerTransaction = getTransactionById(route.params.transactionId);
+  const transaction = detailById[route.params.transactionId] ?? (ledgerTransaction
+    ? {
+        id: ledgerTransaction.id,
+        merchant: ledgerTransaction.merchant,
+        category: ledgerTransaction.category,
+        date: ledgerTransaction.date === 'Today' ? 'April 29, 2026' : ledgerTransaction.date,
+        time: ledgerTransaction.time,
+        amount: ledgerTransaction.amount,
+        currency: ledgerTransaction.currency,
+        tags: ledgerTransaction.tags,
+        recurring: ledgerTransaction.recurring ? 'Auto-record enabled' : 'Not recurring',
+        splitStatus: ledgerTransaction.type === 'income' ? 'Business income' : 'Personal ledger',
+        notes: `${ledgerTransaction.note} recorded from the local demo form. This frontend-only entry will stay available while the app session is active.`,
+        tax: ledgerTransaction.type === 'income' ? '$0.00' : `$${(ledgerTransaction.amount * 0.08).toFixed(2)}`,
+        gratuity: '$0.00',
+        paymentMethod: 'Manual Entry',
+        location: ledgerTransaction.category,
+      }
+    : fallbackDetail);
 
   return (
     <ScreenContainer style={styles.screen} contentContainerStyle={styles.content}>
