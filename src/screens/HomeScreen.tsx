@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, ScreenContainer } from '../components/common';
+import { useTransactions } from '../context/TransactionsContext';
 import { RootTabParamList } from '../navigation/AppTabs';
 import { radius, shadows, spacing, typography } from '../theme';
 
@@ -44,6 +45,33 @@ const cashFlowBars = [
 ];
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
+  const { transactions } = useTransactions();
+  const totalIncome = transactions
+    .filter((transaction) => transaction.type === 'income')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalExpenses = transactions
+    .filter((transaction) => transaction.type === 'expense')
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const netCashFlow = totalIncome - totalExpenses;
+  const portfolioValue = 412850.42 + netCashFlow;
+  const latestTransaction = transactions[0];
+  const diningSpend = transactions
+    .filter((transaction) => ['Gastronomy', 'Dining & Living'].includes(transaction.category))
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const dynamicBudgetItems = budgetItems.map((item) => {
+    if (item.id !== '2') {
+      return item;
+    }
+
+    const progress = Math.min(100, (diningSpend / 800) * 100);
+    return {
+      ...item,
+      spent: `$${Math.round(diningSpend).toLocaleString()}`,
+      progress,
+      status: diningSpend > 800 ? 'over' : 'normal',
+    };
+  });
+
   return (
     <ScreenContainer
       style={styles.screen}
@@ -67,7 +95,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         </AppText>
         <View style={styles.amountRow}>
           <AppText variant="display" color={palette.ink} style={styles.heroAmount}>
-            $412,850.42
+            ${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </AppText>
           <View style={styles.gainPill}>
             <AppText variant="caption" color={palette.primary} style={styles.gainText}>
@@ -86,7 +114,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             Anomaly Alert
           </AppText>
           <AppText variant="label" color={palette.secondary}>
-            Dining up 24% vs avg. Review recent recurring and lifestyle activity.
+            Latest entry: {latestTransaction.merchant} for {latestTransaction.currency}{' '}
+            {latestTransaction.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}.
           </AppText>
         </View>
         <View style={styles.alertMark}>
@@ -146,7 +175,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           Budget Health
         </AppText>
         <View style={styles.progressList}>
-          {budgetItems.map((item) => (
+          {dynamicBudgetItems.map((item) => (
             <View key={item.id} style={styles.progressItem}>
               <View style={styles.progressRow}>
                 <AppText variant="label" color={palette.ink}>

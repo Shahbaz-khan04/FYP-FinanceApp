@@ -27,6 +27,10 @@ const palette = {
 
 export function TransactionsScreen({ navigation }: TransactionsScreenProps) {
   const { transactions } = useTransactions();
+  const currentOutflow = transactions
+    .filter((item) => item.type === 'expense')
+    .reduce((sum, item) => sum + item.amount, 0);
+  const outflowProgress = Math.min(92, Math.max(28, (currentOutflow / 15000) * 100));
   const groups = [
     { title: 'Today', items: transactions.filter((item) => item.date === 'Today') },
     { title: 'Yesterday', items: transactions.filter((item) => item.date === 'Yesterday') },
@@ -54,10 +58,10 @@ export function TransactionsScreen({ navigation }: TransactionsScreenProps) {
           </AppText>
         </View>
         <AppText variant="display" color={palette.primary} style={styles.outflowAmount}>
-          $12,482.50
+          ${currentOutflow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </AppText>
         <View style={styles.summaryTrack}>
-          <View style={styles.summaryFill} />
+          <View style={[styles.summaryFill, { width: `${outflowProgress}%` }]} />
         </View>
       </View>
 

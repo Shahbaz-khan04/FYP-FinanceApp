@@ -129,7 +129,7 @@ export function TransactionDetailScreen({ navigation, route }: TransactionDetail
         id: ledgerTransaction.id,
         merchant: ledgerTransaction.merchant,
         category: ledgerTransaction.category,
-        date: ledgerTransaction.date === 'Today' ? 'April 29, 2026' : ledgerTransaction.date,
+        date: ledgerTransaction.fullDate ?? (ledgerTransaction.date === 'Today' ? 'April 29, 2026' : ledgerTransaction.date),
         time: ledgerTransaction.time,
         amount: ledgerTransaction.amount,
         currency: ledgerTransaction.currency,

@@ -8,6 +8,7 @@ export type LedgerTransaction = {
   merchant: string;
   category: string;
   date: string;
+  fullDate?: string;
   time: string;
   currency: string;
   amount: number;
@@ -177,6 +178,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
         merchant: input.merchant,
         category: input.type === 'income' ? 'Income' : input.category,
         date: 'Today',
+        fullDate: input.date,
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         currency: input.currency,
         amount: input.amount,
