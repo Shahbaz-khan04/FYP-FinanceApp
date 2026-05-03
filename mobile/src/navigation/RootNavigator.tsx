@@ -9,7 +9,12 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SignupScreen } from '../screens/SignupScreen';
+import { TransactionsScreen } from '../screens/TransactionsScreen';
+import { AddTransactionScreen } from '../screens/AddTransactionScreen';
+import { TransactionDetailScreen } from '../screens/TransactionDetailScreen';
+import { CategoriesScreen } from '../screens/CategoriesScreen';
 import { theme } from '../theme';
+import type { TransactionItem } from '../types/transaction';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -19,6 +24,10 @@ export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
   Settings: undefined;
+  Transactions: undefined;
+  Categories: undefined;
+  AddTransaction: undefined;
+  TransactionDetail: { transaction: TransactionItem };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,6 +94,26 @@ export const RootNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+            <Stack.Screen
+              name="Transactions"
+              component={TransactionsScreen}
+              options={{ title: 'Transactions' }}
+            />
+            <Stack.Screen
+              name="Categories"
+              component={CategoriesScreen}
+              options={{ title: 'Categories' }}
+            />
+            <Stack.Screen
+              name="AddTransaction"
+              component={AddTransactionScreen}
+              options={{ title: 'Add Transaction' }}
+            />
+            <Stack.Screen
+              name="TransactionDetail"
+              component={TransactionDetailScreen}
+              options={{ title: 'Edit Transaction' }}
+            />
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
             <Stack.Screen
               name="Settings"

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
+import { transactionService } from '../services/transaction.service.js';
 import { userService } from '../services/user.service.js';
 import { comparePassword, hashPassword, signAuthToken } from '../utils/auth.js';
 import { HttpError } from '../utils/httpError.js';
@@ -45,6 +46,7 @@ authRouter.post('/register', async (req, res, next) => {
       phone: payload.phone,
       passwordHash,
     });
+    await transactionService.seedDefaultCategories(user.id);
 
     const token = signAuthToken({ sub: user.id, email: user.email });
 

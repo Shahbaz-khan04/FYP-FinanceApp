@@ -25,6 +25,8 @@ export const HomeScreen = ({ navigation }: Props) => {
         Auth is connected. Next step is transaction tracking.
       </Text>
       <ActionButton label="Profile" onPress={() => navigation.navigate('Profile')} />
+      <ActionButton label="Transactions" onPress={() => navigation.navigate('Transactions')} />
+      <ActionButton label="Categories" onPress={() => navigation.navigate('Categories')} />
       <ActionButton label="Settings" onPress={() => navigation.navigate('Settings')} variant="secondary" />
       <ActionButton label="Logout" onPress={logout} variant="secondary" />
     </Screen>

@@ -133,7 +133,7 @@ A user can manually track income and expenses and view a useful history.
 Build:
 
 Default categories
-Custom categories
+Create Custom categories
 Category icons/colors
 Income categories
 Expense categories
