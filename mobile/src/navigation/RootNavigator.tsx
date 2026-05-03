@@ -15,9 +15,13 @@ import { TransactionDetailScreen } from '../screens/TransactionDetailScreen';
 import { CategoriesScreen } from '../screens/CategoriesScreen';
 import { BudgetsScreen } from '../screens/BudgetsScreen';
 import { BudgetEditorScreen } from '../screens/BudgetEditorScreen';
+import { GoalsScreen } from '../screens/GoalsScreen';
+import { GoalEditorScreen } from '../screens/GoalEditorScreen';
+import { GoalDetailScreen } from '../screens/GoalDetailScreen';
 import { theme } from '../theme';
 import type { TransactionItem } from '../types/transaction';
 import type { BudgetItem } from '../types/budget';
+import type { GoalItem } from '../types/goal';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -31,6 +35,9 @@ export type RootStackParamList = {
   Categories: undefined;
   Budgets: undefined;
   BudgetEditor: { month: string; budget?: BudgetItem };
+  Goals: undefined;
+  GoalEditor: { goal?: GoalItem } | undefined;
+  GoalDetail: { goal: GoalItem };
   AddTransaction: undefined;
   TransactionDetail: { transaction: TransactionItem };
 };
@@ -118,6 +125,17 @@ export const RootNavigator = () => {
               name="BudgetEditor"
               component={BudgetEditorScreen}
               options={{ title: 'Budget' }}
+            />
+            <Stack.Screen name="Goals" component={GoalsScreen} options={{ title: 'Goals' }} />
+            <Stack.Screen
+              name="GoalEditor"
+              component={GoalEditorScreen}
+              options={{ title: 'Goal' }}
+            />
+            <Stack.Screen
+              name="GoalDetail"
+              component={GoalDetailScreen}
+              options={{ title: 'Goal Detail' }}
             />
             <Stack.Screen
               name="AddTransaction"

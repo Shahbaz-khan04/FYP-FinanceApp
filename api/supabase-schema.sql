@@ -70,3 +70,18 @@ create table if not exists public.budgets (
 );
 
 create index if not exists idx_budgets_user_month on public.budgets(user_id, month);
+
+create table if not exists public.goals (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  title text not null,
+  target_amount numeric(14,2) not null check (target_amount > 0),
+  saved_amount numeric(14,2) not null default 0 check (saved_amount >= 0),
+  deadline date not null,
+  is_completed boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_goals_user_id on public.goals(user_id);
+create index if not exists idx_goals_user_deadline on public.goals(user_id, deadline);

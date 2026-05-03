@@ -8,6 +8,7 @@ import { budgetRouter } from './routes/budget.routes.js';
 import { categoryRouter } from './routes/category.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { transactionRouter } from './routes/transaction.routes.js';
 import { userRouter } from './routes/user.routes.js';
@@ -27,6 +28,7 @@ export const createApp = () => {
   app.use('/transactions', transactionRouter);
   app.use('/dashboard', dashboardRouter);
   app.use('/budgets', budgetRouter);
+  app.use('/goals', goalRouter);
 
   app.use(errorHandler);
 

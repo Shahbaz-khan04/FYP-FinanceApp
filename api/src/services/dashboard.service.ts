@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { goalService } from './goal.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 const requireDb = () => {
@@ -33,7 +34,7 @@ export const dashboardService = {
     const selectedMonth = month ?? currentMonth();
     const { start, end } = toMonthRange(selectedMonth);
 
-    const [{ data, error }, { data: budgets, error: budgetsError }] = await Promise.all([
+    const [{ data, error }, { data: budgets, error: budgetsError }, goalProgress] = await Promise.all([
       db
         .from('transactions')
         .select(
@@ -49,6 +50,7 @@ export const dashboardService = {
         .select('planned_amount')
         .eq('user_id', userId)
         .eq('month', selectedMonth),
+      goalService.getProgressSummary(userId),
     ]);
 
     if (error) {
@@ -126,11 +128,7 @@ export const dashboardService = {
         remaining: budgetRemaining,
         percentUsed: budgetPercentUsed,
       },
-      goalProgress: {
-        totalGoals: 0,
-        completedGoals: 0,
-        completionRate: 0,
-      },
+      goalProgress,
     };
   },
 

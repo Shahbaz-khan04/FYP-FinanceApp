@@ -292,6 +292,8 @@ Sync endpoint or normal CRUD sync
 Minimum success condition:
 
 User can add transactions offline and they upload later.
+
+
 Phase 2: Smart Features
 This phase adds intelligence on top of the working finance tracker.
 
@@ -304,32 +306,7 @@ Step 1: Rule-based categorization:
 If note contains “Uber”, category = Transport
 If note contains “rent”, category = Rent
 If note contains “Netflix”, category = Entertainment
-Step 2: ML/NLP categorization:
 
-Use transaction title/description
-Predict category
-Let user correct category
-Store corrections for improvement
-Build:
-
-Auto-suggest category while adding transaction
-Confidence score
-User override
-Learning from corrections
-Backend work:
-
-Categorization service
-Category prediction API
-Training data structure
-Feedback/correction storage
-Mobile work:
-
-Suggested category UI
-“Accept suggestion” flow
-Manual override
-Minimum success condition:
-
-App can suggest transaction categories with reasonable accuracy.
 2. OCR Receipt Scanning
 
 Use OCR Space API or another OCR provider.

@@ -1,0 +1,342 @@
+Test Suite: Categories
+
+Default category seed on signup
+Create a brand new account.
+Go to Home -> Transactions -> Add Transaction.
+Expected: category chips exist for both income and expense types (e.g. Salary/Food/etc).
+Category filtering by type
+In Add screen, switch income/expense.
+Expected: category list changes to matching type only.
+Category API authorization
+Logout and try opening transactions endpoints manually without token (optional via Postman/curl).
+Expected: 401 UNAUTHORIZED.
+Test Suite: Add Transaction
+
+Add expense with full fields
+Add:
+amount 1200
+type expense
+category Food
+date 2026-05-03
+currency PKR
+payment method Cash
+notes Lunch
+tags office,meal
+Save.
+Expected: returns to list and new row appears with correct values.
+Add income transaction
+Add salary/income record with different category/type.
+Expected: row appears as income; net total increases.
+Validation: invalid amount
+Enter 0 or negative amount.
+Expected: error shown; transaction not created.
+Validation: invalid date format
+Enter date like 03-05-2026.
+Expected: validation error; no record saved.
+Validation: invalid currency length
+Enter PKRR.
+Expected: validation error.
+Test Suite: Transaction List + History
+
+List loads in descending date order
+Add multiple records across dates.
+Expected: most recent date appears first.
+Useful history display
+Verify each row shows:
+amount + currency
+type
+category
+date
+payment method
+notes preview
+Expected: all visible and readable.
+Net total correctness
+Add known values:
+income 5000
+expense 1200
+Expected net total: 3800.00.
+Test Suite: Filters
+
+Type filter
+Tap Income.
+Expected: only income transactions.
+Category filter
+Select one category chip (e.g. Food).
+Expected: only that category.
+Date range filter
+Set start/end date.
+Tap Apply filters.
+Expected: only records inside range.
+Combined filters
+Apply type + category + date together.
+Expected: intersection only.
+Clear behavior
+Untoggle type/category and empty dates.
+Apply.
+Expected: full list returns.
+Test Suite: Search
+
+Search by notes
+Add note client lunch.
+Search client.
+Expected: matching row appears.
+Search by payment method
+Payment method JazzCash.
+Search jazz.
+Expected: matching row appears.
+No-result state
+Search gibberish string.
+Expected: empty list (no crash).
+Test Suite: Edit Transaction
+
+Open detail and update fields
+Tap any transaction.
+Change amount/date/notes/tags/payment method/category.
+Save.
+Expected: back to list; row reflects updated values.
+Change type expense->income
+In detail, switch type.
+Save.
+Expected: record type updates; totals/filter behavior reflect change.
+Validation on edit
+Set invalid amount/date/currency.
+Expected: error, no invalid update.
+Test Suite: Delete Transaction
+
+Delete existing record
+Open detail for a row.
+Tap Delete transaction.
+Expected: returns to list; row removed.
+Filter consistency after delete
+Delete a row while a filter is active.
+Expected: filtered list refreshes without deleted row.
+
+
+A) Default category seeding
+Create a new user account.
+Go to Home -> Transactions -> Add Transaction.
+Set type to expense.
+Verify chips include: Food, Transport, Rent, Bills, Shopping, Health, Entertainment, Business, Other.
+Set type to income.
+Verify chips include: Salary, Freelance, Business Sales, Investment, Gift, Other.
+Expected: All listed categories appear, each with icon text and color border.
+
+B) Custom category creation
+Open Add Transaction.
+Select type expense.
+In “Create custom expense category”, enter Pets.
+Pick an icon and color.
+Tap Create Category.
+Expected:
+
+New Pets category appears in chips.
+Pets becomes selected automatically.
+No page crash/reload.
+C) Duplicate category protection
+Try creating Pets again under expense.
+Tap Create Category.
+Expected:
+
+Error shown: category already exists for this type.
+No duplicate created.
+D) Same name across different types
+Create Bonus under income.
+Switch type to expense.
+Create Bonus again under expense.
+Expected:
+
+Allowed (because type differs).
+Each appears only under its own type filter.
+E) Icon/color persistence in edit + list filters
+Create a custom category with clear color/icon.
+Save a transaction using it.
+Open transaction detail/edit screen.
+Expected:
+
+Category chip shows same icon/color.
+In Transactions screen filter chips, same icon/color appears.
+F) Category usage in transaction organization
+Add 3 transactions in different categories.
+Go to transactions list.
+Confirm each row shows correct category name.
+Apply category filter chip for one category.
+
+A) Navigation + screen availability
+Login.
+Home screen should show Categories button.
+Tap it.
+Expected: Categories screen opens.
+B) Category list by type
+In Categories screen, select expense.
+Verify expense defaults appear.
+Switch to income.
+Verify income defaults appear.
+C) Create custom category
+Pick expense.
+Enter name Pets.
+Pick icon + color.
+Tap Create Category.
+Expected: Pets appears in list immediately.
+D) Delete custom category
+In list, find custom category (e.g. Pets).
+Tap Delete.
+Expected: category removed from list.
+E) Default category protection
+Try deleting default category item.
+Expected: no delete action shown for default categories.
+F) Icon rendering verification
+Open Categories screen list.
+Open Add Transaction category chips.
+Open Transaction Detail category chips.
+Expected: real vector icons are shown, not raw text names.
+G) Transaction screen integration
+Create custom category in Categories screen.
+Go to Add Transaction.
+Expected: new category is selectable there.
+Save a transaction with it.
+Expected: list shows transaction categorized correctly.
+
+
+A) Dashboard loads as first authenticated screen
+Login.
+Expected: first screen title is Dashboard.
+B) Month selector
+Note current month value (e.g. 2026-05).
+Tap Prev.
+Expected: month changes to previous month and data refreshes.
+Tap Next.
+Expected: returns to current month and data refreshes.
+C) Summary cards correctness
+Create known transactions in selected month:
+income: 5000
+expense: 1200
+Return to dashboard.
+Expected:
+Income = 5000
+Expenses = 1200
+Balance = 3800
+D) Top spending categories chart
+Add multiple expense transactions under different categories.
+Return to dashboard.
+Expected:
+Category rows appear sorted by highest spend.
+Bar widths reflect relative spend.
+Category icon + color is shown.
+E) Recent transactions
+Add at least 3 new transactions.
+Return to dashboard.
+Expected:
+Recent section shows newest entries first.
+Each row shows amount, type, category, date.
+F) Monthly totals snapshot
+Add transactions across 2+ different months.
+Return to dashboard.
+Expected:
+Monthly snapshot lists months with income/expense summaries.
+G) Budget/goal preview cards
+Open dashboard with any data.
+Expected:
+Budget and goal preview cards render without errors.
+Values are currently preview placeholders (until full budget/goal modules are built).
+
+
+Test cases (step-by-step) for Budgeting
+1) Schema and boot check
+Run updated SQL from supabase-schema.sql in Supabase.
+Restart both servers:
+
+bash
+
+
+
+npm run dev:api
+npm run dev:mobile
+
+
+
+Login and open Dashboard -> Budgets.
+
+Expected: Budgets screen loads without API error.
+
+2) Create monthly budget
+Tap Create Budget.
+Enter month YYYY-MM (current month).
+Pick an expense category.
+Set planned amount (e.g. 10000).
+Save.
+
+Expected: Budget appears in list for that month.
+
+3) Duplicate protection
+Create another budget with same month + same category.
+Save.
+
+Expected: Error saying budget already exists for that category/month.
+
+4) Actual spend calculation
+Add expense transactions in the same month/category as budget.
+Return to Budgets screen.
+
+Expected:
+
+
+Actual increases correctly.
+
+Remaining = Planned - Actual.
+
+
+5) Near-limit indicator
+Set planned amount small enough so actual is around 80–100%.
+Return to list.
+
+Expected:
+
+
+Item shows near-limit styling/message.
+
+Progress bar color changes to warning style.
+
+
+6) Over-budget indicator
+Add expenses so actual > planned.
+Return to list.
+
+Expected:
+
+
+Item marked over-budget.
+
+Progress bar and border show danger style.
+
+
+7) Edit budget
+Tap existing budget row.
+Change planned amount.
+Save.
+
+Expected:
+
+
+List updates with new planned/remaining/percent values.
+
+
+8) Delete budget
+Open budget editor for an existing budget.
+Tap Delete Budget.
+
+Expected: Budget disappears from list.
+
+9) Month navigation
+In Budgets screen use Prev / Next.
+Observe list/totals for each month.
+
+Expected: Data switches by selected month.
+
+10) Dashboard budget summary sync
+Create one or more budgets + expenses in current month.
+Go back to Dashboard.
+
+Expected:
+
+
+Budget Usage card reflects real planned, spent, and remaining values.
