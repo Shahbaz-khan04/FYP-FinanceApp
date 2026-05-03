@@ -2,8 +2,8 @@ import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { DashboardScreen } from '../screens/DashboardScreen';
 import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
-import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
@@ -93,7 +93,7 @@ export const RootNavigator = () => {
           </>
         ) : (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+            <Stack.Screen name="Home" component={DashboardScreen} options={{ title: 'Dashboard' }} />
             <Stack.Screen
               name="Transactions"
               component={TransactionsScreen}

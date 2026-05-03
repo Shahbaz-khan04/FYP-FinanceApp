@@ -1,0 +1,174 @@
+import { type NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { CategoryIcon } from '../components/CategoryIcon';
+import { useAuth } from '../context/AuthContext';
+import { dashboardApi } from '../lib/dashboardApi';
+import type { RootStackParamList } from '../navigation/RootNavigator';
+import { theme } from '../theme';
+import type { DashboardCategoryBreakdown, DashboardMonthTotal, DashboardSummary } from '../types/dashboard';
+import { ActionButton, Screen } from './common';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+const currentMonth = () => new Date().toISOString().slice(0, 7);
+const shiftMonth = (month: string, delta: number) => {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return d.toISOString().slice(0, 7);
+};
+
+export const DashboardScreen = ({ navigation }: Props) => {
+  const { token, logout } = useAuth();
+  const [month, setMonth] = useState(currentMonth());
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [monthlyTotals, setMonthlyTotals] = useState<DashboardMonthTotal[]>([]);
+  const [categoryBreakdown, setCategoryBreakdown] = useState<DashboardCategoryBreakdown[]>([]);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    try {
+      setError('');
+      const [summaryData, totalsData, breakdownData] = await Promise.all([
+        dashboardApi.getSummary(token, month),
+        dashboardApi.getMonthlyTotals(token, 6),
+        dashboardApi.getCategoryBreakdown(token, month),
+      ]);
+      setSummary(summaryData);
+      setMonthlyTotals(totalsData);
+      setCategoryBreakdown(breakdownData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+    }
+  }, [month, token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const maxBreakdown = useMemo(
+    () => Math.max(...categoryBreakdown.map((item) => item.total), 1),
+    [categoryBreakdown],
+  );
+
+  return (
+    <Screen>
+      <ScrollView>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Pressable onPress={() => setMonth((prev) => shiftMonth(prev, -1))}>
+            <Text style={{ color: theme.colors.brand.primary }}>{'< Prev'}</Text>
+          </Pressable>
+          <Text style={{ ...theme.typography.title2, color: theme.colors.text.primary }}>{month}</Text>
+          <Pressable onPress={() => setMonth((prev) => shiftMonth(prev, 1))}>
+            <Text style={{ color: theme.colors.brand.primary }}>{'Next >'}</Text>
+          </Pressable>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: theme.spacing[2], marginTop: theme.spacing[3] }}>
+          <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+            <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Income</Text>
+            <Text style={{ ...theme.typography.title2, color: theme.colors.state.success }}>
+              {summary ? summary.income.toFixed(2) : '0.00'}
+            </Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+            <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Expenses</Text>
+            <Text style={{ ...theme.typography.title2, color: theme.colors.state.danger }}>
+              {summary ? summary.expenses.toFixed(2) : '0.00'}
+            </Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+            <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Balance</Text>
+            <Text style={{ ...theme.typography.title2, color: theme.colors.text.primary }}>
+              {summary ? summary.balance.toFixed(2) : '0.00'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+          <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Top Spending Categories</Text>
+          {categoryBreakdown.slice(0, 5).map((item) => (
+            <View key={`${item.name}-${item.categoryId ?? 'none'}`} style={{ marginTop: theme.spacing[2] }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing[1] }}>
+                  <CategoryIcon icon={item.icon} color={item.color} />
+                  <Text style={{ color: theme.colors.text.secondary }}>{item.name}</Text>
+                </View>
+                <Text style={{ color: theme.colors.text.primary }}>{item.total.toFixed(2)}</Text>
+              </View>
+              <View style={{ height: 8, backgroundColor: theme.colors.background.surfaceRaised, borderRadius: theme.radius.pill, marginTop: theme.spacing[1] }}>
+                <View
+                  style={{
+                    width: `${(item.total / maxBreakdown) * 100}%`,
+                    height: 8,
+                    backgroundColor: item.color,
+                    borderRadius: theme.radius.pill,
+                  }}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+          <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Recent Transactions</Text>
+          {(summary?.recentTransactions ?? []).map((tx) => (
+            <View key={tx.id} style={{ marginTop: theme.spacing[2], borderBottomWidth: 1, borderBottomColor: theme.colors.border.subtle, paddingBottom: theme.spacing[2] }}>
+              <Text style={{ color: theme.colors.text.primary }}>
+                {tx.currency} {tx.amount.toFixed(2)} • {tx.type}
+              </Text>
+              <Text style={{ color: theme.colors.text.secondary }}>
+                {tx.categoryName} • {tx.date}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: theme.spacing[2], marginTop: theme.spacing[3] }}>
+          <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+            <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Budget Usage</Text>
+            <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
+              Spent: {summary?.budgetUsage.spent.toFixed(2) ?? '0.00'}
+            </Text>
+            <Text style={{ color: theme.colors.text.secondary }}>
+              Planned: {summary?.budgetUsage.planned.toFixed(2) ?? '0.00'}
+            </Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+            <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Goal Progress</Text>
+            <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
+              Completed: {summary?.goalProgress.completedGoals ?? 0}/{summary?.goalProgress.totalGoals ?? 0}
+            </Text>
+            <Text style={{ color: theme.colors.text.secondary }}>
+              Rate: {summary?.goalProgress.completionRate.toFixed(1) ?? '0.0'}%
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
+          <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Monthly Snapshot</Text>
+          {monthlyTotals.map((m) => (
+            <View key={m.month} style={{ marginTop: theme.spacing[2], flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ color: theme.colors.text.secondary }}>{m.month}</Text>
+              <Text style={{ color: theme.colors.text.primary }}>
+                +{m.income.toFixed(0)} / -{m.expenses.toFixed(0)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
+        <ActionButton label="Transactions" onPress={() => navigation.navigate('Transactions')} />
+        <ActionButton label="Categories" onPress={() => navigation.navigate('Categories')} variant="secondary" />
+        <ActionButton label="Profile" onPress={() => navigation.navigate('Profile')} variant="secondary" />
+        <ActionButton label="Settings" onPress={() => navigation.navigate('Settings')} variant="secondary" />
+        <ActionButton label="Logout" onPress={logout} variant="secondary" />
+      </ScrollView>
+    </Screen>
+  );
+};
+

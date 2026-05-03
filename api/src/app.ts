@@ -5,6 +5,7 @@ import { pinoHttp } from 'pino-http';
 import { logger } from './config/logger.js';
 import { authRouter } from './routes/auth.routes.js';
 import { categoryRouter } from './routes/category.routes.js';
+import { dashboardRouter } from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.routes.js';
 import { transactionRouter } from './routes/transaction.routes.js';
@@ -23,6 +24,7 @@ export const createApp = () => {
   app.use('/users', userRouter);
   app.use('/categories', categoryRouter);
   app.use('/transactions', transactionRouter);
+  app.use('/dashboard', dashboardRouter);
 
   app.use(errorHandler);
 
