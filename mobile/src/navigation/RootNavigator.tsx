@@ -13,8 +13,11 @@ import { TransactionsScreen } from '../screens/TransactionsScreen';
 import { AddTransactionScreen } from '../screens/AddTransactionScreen';
 import { TransactionDetailScreen } from '../screens/TransactionDetailScreen';
 import { CategoriesScreen } from '../screens/CategoriesScreen';
+import { BudgetsScreen } from '../screens/BudgetsScreen';
+import { BudgetEditorScreen } from '../screens/BudgetEditorScreen';
 import { theme } from '../theme';
 import type { TransactionItem } from '../types/transaction';
+import type { BudgetItem } from '../types/budget';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -26,6 +29,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Transactions: undefined;
   Categories: undefined;
+  Budgets: undefined;
+  BudgetEditor: { month: string; budget?: BudgetItem };
   AddTransaction: undefined;
   TransactionDetail: { transaction: TransactionItem };
 };
@@ -103,6 +108,16 @@ export const RootNavigator = () => {
               name="Categories"
               component={CategoriesScreen}
               options={{ title: 'Categories' }}
+            />
+            <Stack.Screen
+              name="Budgets"
+              component={BudgetsScreen}
+              options={{ title: 'Budgets' }}
+            />
+            <Stack.Screen
+              name="BudgetEditor"
+              component={BudgetEditorScreen}
+              options={{ title: 'Budget' }}
             />
             <Stack.Screen
               name="AddTransaction"

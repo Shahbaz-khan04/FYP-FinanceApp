@@ -57,3 +57,16 @@ create table if not exists public.transactions (
 
 create index if not exists idx_transactions_user_id_date on public.transactions(user_id, date desc);
 create index if not exists idx_transactions_user_type_date on public.transactions(user_id, type, date desc);
+
+create table if not exists public.budgets (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  month char(7) not null,
+  category_id uuid not null references public.categories(id) on delete cascade,
+  planned_amount numeric(14,2) not null check (planned_amount > 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, month, category_id)
+);
+
+create index if not exists idx_budgets_user_month on public.budgets(user_id, month);

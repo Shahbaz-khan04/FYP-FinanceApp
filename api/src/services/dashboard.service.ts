@@ -33,19 +33,29 @@ export const dashboardService = {
     const selectedMonth = month ?? currentMonth();
     const { start, end } = toMonthRange(selectedMonth);
 
-    const { data, error } = await db
-      .from('transactions')
-      .select(
-        'id, amount, type, date, currency, payment_method, notes, created_at, categories(id,name,color,icon)',
-      )
-      .eq('user_id', userId)
-      .gte('date', start)
-      .lte('date', end)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
+    const [{ data, error }, { data: budgets, error: budgetsError }] = await Promise.all([
+      db
+        .from('transactions')
+        .select(
+          'id, amount, type, date, currency, payment_method, notes, created_at, categories(id,name,color,icon)',
+        )
+        .eq('user_id', userId)
+        .gte('date', start)
+        .lte('date', end)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false }),
+      db
+        .from('budgets')
+        .select('planned_amount')
+        .eq('user_id', userId)
+        .eq('month', selectedMonth),
+    ]);
 
     if (error) {
       throw new HttpError(500, 'DASHBOARD_READ_FAILED', 'Could not load summary data');
+    }
+    if (budgetsError) {
+      throw new HttpError(500, 'DASHBOARD_BUDGET_FAILED', 'Could not load budget usage');
     }
 
     const transactions = data ?? [];
@@ -96,6 +106,13 @@ export const dashboardService = {
       };
     });
 
+    const totalPlanned = (budgets ?? []).reduce(
+      (sum: number, row: any) => sum + Number(row.planned_amount),
+      0,
+    );
+    const budgetRemaining = totalPlanned - expenses;
+    const budgetPercentUsed = totalPlanned > 0 ? (expenses / totalPlanned) * 100 : 0;
+
     return {
       month: selectedMonth,
       income,
@@ -104,10 +121,10 @@ export const dashboardService = {
       topSpendingCategories,
       recentTransactions,
       budgetUsage: {
-        planned: 0,
+        planned: totalPlanned,
         spent: expenses,
-        remaining: 0,
-        percentUsed: 0,
+        remaining: budgetRemaining,
+        percentUsed: budgetPercentUsed,
       },
       goalProgress: {
         totalGoals: 0,
