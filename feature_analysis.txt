@@ -1,0 +1,125 @@
+Intro:
+A mobile-first financial management app built for individuals, freelancers, and small business owners, designed to turn fragmented financial data into clear, actionable decisions.
+
+The product combines AI-powered insights, OCR-based receipt scanning, predictive forecasting, flexible budgeting, and multi-currency support into a single unified experience—moving users from reactive tracking to proactive financial planning.
+
+Trust is built through secure authentication and encryption, reliable offline functionality with seamless sync, transparent and explainable AI recommendations, and clean, readable visualizations that make complex financial data easy to understand.
+
+The system intentionally avoids complexity by excluding direct bank integrations and tax-related features, focusing instead on usability, control, and intelligent guidance.
+
+Feature Analysis:
+This document provides an in-depth Feature Analysis for Personal Finance Analyzer and
+Budgeting Assistant. This is a comprehensive cross-platform mobile application designed to
+simplify personal and small business financial management. In today’s economy, financial
+decision-making is often reactive, lacking predictive guidance. Existing apps cover isolated
+needs(budgeting, expense tracking) but fail to integrate intelligent forecasting, multi-currency
+support, and both personal/business finance separation.
+This system addresses these market gaps by combining AI-powered expense categorization,
+predictive analytics, multi-currency support, reporting, and flexible budgeting
+methodologies into one unified application. Users benefit from real-time insights, intuitive
+dashboards, and actionable recommendations that go beyond visualization—helping them plan
+proactively rather than reactively.
+The document below analyzes all features of the system in a structured way. It serves as a single
+reference point for development, QA, project management, and stakeholder communication.
+
+
+1.3 System Scope
+In Scope
+●
+Expense, income, and savings tracking with AI/ML categorization.
+2
+Final Year Project Feature Analysis Document
+●
+●
+●
+●
+●
+●
+Multiple budgeting methodologies (percentage, envelope, zero-based).
+Predictive insights including cash flow forecasting, anomaly alerts, and financial advice.
+Multi-currency support with real-time exchange rate conversion.
+Business features: invoices, business P&L.
+Offline support with automatic synchronization once online.
+Data security through JWT authentication and encryption at rest and transit.
+Out of Scope
+●
+●
+Direct bank account integration (regulatory complexity).
+Tax-related features (filing, preparation, or calculation)
+2. Features
+2.1 Registered User Features
+2.1.1 User Account Management
+2.1.1.1 Sign up with form (Name, Email, Phone, Password)
+2.1.1.2 Sign up with Google/Apple ID
+2.1.1.3 Login with email/phone & password
+2.1.1.4 Social login (Google/Apple ID)
+2.1.1.5 Forgot/Reset password
+2.1.1.6 Manage personal profile (view, update, delete)
+2.1.1.7 Account settings (notifications, preferences, theme)
+2.1.1.8 Log out
+2.1.2 Expense & Income Tracking
+2.1.2.1 Add manual transactions (expense/income)
+2.1.2.2 Automatic categorization of expenses using AI/ML
+2.1.2.3 Edit or delete transactions
+2.1.2.4 Upload receipts via camera (OCR scanning)
+2.1.2.5 View real-time transaction history
+2.1.2.6 Split expenses (manual or smart suggestions)
+2.1.2.7 Set recurring transactions (rent, bills, subscriptions)
+2.1.2.8 Tag transactions for custom grouping (e.g., “Project A”, “Trip 2025”)
+2.1.3 Budgeting & Goals
+2.1.3.1 Create budgets using different methodologies:
+2.1.3.1.1 Percentage-based
+3
+Final Year Project 2.1.3.1.2 Envelope budgeting
+2.1.3.1.3 Zero-based budgeting
+2.1.3.2 Adjust budgets dynamically with income changes
+2.1.3.3 Set financial goals (e.g., savings for vacation, emergency fund)
+2.1.3.4 Track progress toward goals with milestone indicators
+2.1.3.5 Receive intelligent recommendations for budget optimization
+2.1.3.6 Budget variance analysis (planned vs. actual spending)
+2.1.3.7 Goal prioritization (system suggests which goal to focus on first)
+2.1.4 Analytics & Reports
+2.1.4.1 Cash flow forecasting (AI-based)
+2.1.4.2 Spending anomaly detection and alerts
+2.1.4.3 Profit and loss statement generation
+2.1.4.4 Custom financial reports and charts (monthly/yearly)
+2.1.4.5 Category-wise spending breakdown
+2.1.4.6 Personalized financial advice based on user patterns
+2.1.5 Multi-Currency Support
+2.1.5.1 Add transactions in different currencies
+2.1.5.2 Real-time exchange rate conversion (via ExchangeRate API)
+2.1.5.3 View consolidated reports across multiple currencies
+2.1.6 Help Center Interaction
+2.1.6.1 Browse FAQs and support articles
+2.1.6.2 Post a question to the Help Center
+2.1.6.3 View responses to submitted questions
+2.2 Offline Features
+2.2.1 Add Transactions Offline
+2.2.1.1 Record income/expense without internet
+2.2.1.2 Categorize transactions (basic; AI-categorization will sync later)
+2.2.1.3 Attach receipts (stored locally until synced)
+Feature Analysis Document
+2.2.2 View Saved Data Offline
+2.2.2.1 Access previously synced transactions, budgets, and reports
+2.2.2.2 Check financial goals and progress (last synced state)
+4
+Final Year Project Feature Analysis Document
+2.2.3 Modify Data Offline
+2.2.3.1 Edit or delete offline transactions
+2.2.3.2 Update goals or budgets (changes sync once online)
+2.2.4 Sync on Reconnect
+2.2.4.1 Automatic background sync when internet is restored
+2.2.4.2 Conflict resolution (prioritizes most recent change if edited offline and online)
+2.3 Admin Features (System Administrator)
+2.3.1 Admin Login (secure access)
+2.3.2 Manage FAQs and Help Center content (add, update, delete).
+2.3.3 Respond to user-submitted questions in the Help Center.
+2.4 Advanced Features & Integrations
+2.4.1 AI/ML-powered expense categorization (NLP-based)
+2.4.2 OCR-based receipt scanning (OCR Space API)
+2.4.3 Real-time currency conversion (ExchangeRate API)
+2.4.4 Offline mode with data synchronization when online
+2.4.5 Notifications for bill reminders, overspending alerts, and goal milestones
+2.4.6 Secure authentication with JWT & data encryption
+2.4.7 AI-driven budgeting insights for smarter financial planning
+2.5.8 Data visualization with interactive charts (Chart.js integration)
