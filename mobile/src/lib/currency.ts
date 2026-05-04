@@ -1,13 +1,29 @@
 import type { UserSettings } from '../types/auth';
 
-export const SUPPORTED_CURRENCIES = ['PKR', 'USD', 'EUR', 'GBP', 'AED', 'SAR'] as const;
-
 export const getPreferredCurrency = (settings?: Partial<UserSettings> | null) => {
   const candidate = (settings?.currency ?? '').toUpperCase();
-  if (SUPPORTED_CURRENCIES.includes(candidate as (typeof SUPPORTED_CURRENCIES)[number])) {
+  if (/^[A-Z]{3}$/.test(candidate)) {
     return candidate;
   }
   return 'PKR';
+};
+
+export const convertAmount = (
+  amount: number,
+  fromCurrency: string | null | undefined,
+  toCurrency: string,
+  ratesBase: string | null | undefined,
+  rates: Record<string, number> | null | undefined,
+) => {
+  const from = (fromCurrency ?? toCurrency).toUpperCase();
+  const to = toCurrency.toUpperCase();
+  if (!Number.isFinite(amount)) return 0;
+  if (from === to) return amount;
+  if (!ratesBase || !rates) return amount;
+  if (ratesBase.toUpperCase() !== to) return amount;
+  const toFrom = rates[from];
+  if (!toFrom || !Number.isFinite(toFrom) || toFrom <= 0) return amount;
+  return amount / toFrom;
 };
 
 export const formatMoney = (amount: number, currency: string) => {

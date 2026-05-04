@@ -13,6 +13,7 @@ import { forecastRouter } from './routes/forecast.routes.js';
 import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { helpRouter } from './routes/help.routes.js';
+import { fxRouter } from './routes/fx.routes.js';
 import { reportRouter } from './routes/report.routes.js';
 import { recurringJobRouter, recurringRouter } from './routes/recurring.routes.js';
 import { recommendationRouter } from './routes/recommendation.routes.js';
@@ -39,6 +40,7 @@ export const createApp = () => {
   app.use('/goals', goalRouter);
   app.use('/reports', reportRouter);
   app.use('/help', helpRouter);
+  app.use('/fx', fxRouter);
   app.use('/receipts', receiptRouter);
   app.use('/recommendations', recommendationRouter);
   app.use('/recurring', recurringRouter);

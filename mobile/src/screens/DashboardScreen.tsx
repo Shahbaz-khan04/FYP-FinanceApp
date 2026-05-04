@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
-import { formatMoney, getPreferredCurrency } from '../lib/currency';
+import { convertAmount, formatMoney, getPreferredCurrency } from '../lib/currency';
 import { dashboardApi } from '../lib/dashboardApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -21,7 +21,7 @@ const shiftMonth = (month: string, delta: number) => {
 };
 
 export const DashboardScreen = ({ navigation }: Props) => {
-  const { token, logout, user } = useAuth();
+  const { token, logout, user, currencyRates, currencyRatesBase } = useAuth();
   const preferredCurrency = getPreferredCurrency(user?.settings);
   const [month, setMonth] = useState(currentMonth());
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -121,7 +121,11 @@ export const DashboardScreen = ({ navigation }: Props) => {
           {(summary?.recentTransactions ?? []).map((tx) => (
             <View key={tx.id} style={{ marginTop: theme.spacing[2], borderBottomWidth: 1, borderBottomColor: theme.colors.border.subtle, paddingBottom: theme.spacing[2] }}>
               <Text style={{ color: theme.colors.text.primary }}>
-                {formatMoney(tx.amount, preferredCurrency)} • {tx.type}
+                {formatMoney(
+                  convertAmount(tx.amount, tx.currency, preferredCurrency, currencyRatesBase, currencyRates),
+                  preferredCurrency,
+                )}{' '}
+                • {tx.type}
               </Text>
               <Text style={{ color: theme.colors.text.secondary }}>
                 {tx.categoryName} • {tx.date}

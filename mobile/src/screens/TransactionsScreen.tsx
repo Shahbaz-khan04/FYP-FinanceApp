@@ -6,7 +6,7 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
 import { alertsApi } from '../lib/alertsApi';
-import { formatMoney, getPreferredCurrency } from '../lib/currency';
+import { convertAmount, formatMoney, getPreferredCurrency } from '../lib/currency';
 import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -18,7 +18,7 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>;
 
 export const TransactionsScreen = ({ navigation }: Props) => {
-  const { token, user } = useAuth();
+  const { token, user, currencyRates, currencyRatesBase } = useAuth();
   const preferredCurrency = getPreferredCurrency(user?.settings);
   const netInfo = useNetInfo();
   const isOnline = Boolean(netInfo.isConnected);
@@ -248,7 +248,11 @@ export const TransactionsScreen = ({ navigation }: Props) => {
               </Text>
             ) : null}
             <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>
-              {formatMoney(item.amount, preferredCurrency)} • {item.type}
+              {formatMoney(
+                convertAmount(item.amount, item.currency, preferredCurrency, currencyRatesBase, currencyRates),
+                preferredCurrency,
+              )}{' '}
+              • {item.type}
             </Text>
             <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
               {item.categoryName ?? 'Uncategorized'} • {item.date}

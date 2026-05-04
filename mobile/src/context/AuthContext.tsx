@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { Platform } from 'react-native';
+import { fxApi } from '../lib/fxApi';
 import { apiClient } from '../lib/apiClient';
 import type { AuthResponse, AuthUser, UserSettings } from '../types/auth';
 
@@ -55,6 +56,9 @@ type AuthContextValue = {
   refreshProfile: () => Promise<void>;
   updateProfile: (payload: { name: string; phone: string }) => Promise<void>;
   updateSettings: (settings: UserSettings) => Promise<void>;
+  currencyRatesBase: string | null;
+  currencyRates: Record<string, number> | null;
+  refreshCurrencyRates: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -77,6 +81,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [currencyRatesBase, setCurrencyRatesBase] = useState<string | null>(null);
+  const [currencyRates, setCurrencyRates] = useState<Record<string, number> | null>(null);
 
   const persistSession = useCallback(async (auth: AuthResponse) => {
     await authStorage.setItem(auth.token);
@@ -109,6 +115,15 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       settings: normalizeSettings(response.data.settings),
     });
   }, [token]);
+
+  const refreshCurrencyRates = useCallback(async () => {
+    const activeToken = token ?? (await authStorage.getItem());
+    const selectedCurrency = user?.settings?.currency?.toUpperCase();
+    if (!activeToken || !selectedCurrency) return;
+    const response = await fxApi.rates(activeToken, selectedCurrency);
+    setCurrencyRatesBase(response.base);
+    setCurrencyRates(response.rates);
+  }, [token, user?.settings?.currency]);
 
   const signIn = useCallback(
     async (payload: { email: string; password: string }) => {
@@ -198,6 +213,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         ...response.data,
         settings: normalizeSettings(response.data.settings),
       });
+      const selectedCurrency = normalizeSettings(response.data.settings).currency;
+      const fx = await fxApi.rates(token, selectedCurrency);
+      setCurrencyRatesBase(fx.base);
+      setCurrencyRates(fx.rates);
     },
     [token],
   );
@@ -221,6 +240,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           ...response.data,
           settings: normalizeSettings(response.data.settings),
         });
+        const selectedCurrency = normalizeSettings(response.data.settings).currency;
+        const fx = await fxApi.rates(savedToken, selectedCurrency);
+        setCurrencyRatesBase(fx.base);
+        setCurrencyRates(fx.rates);
       } catch {
         await clearSession();
       } finally {
@@ -244,6 +267,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       refreshProfile,
       updateProfile,
       updateSettings,
+      currencyRatesBase,
+      currencyRates,
+      refreshCurrencyRates,
     }),
     [
       user,
@@ -257,6 +283,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       refreshProfile,
       updateProfile,
       updateSettings,
+      currencyRatesBase,
+      currencyRates,
+      refreshCurrencyRates,
     ],
   );
 
