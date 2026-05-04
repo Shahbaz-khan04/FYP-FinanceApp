@@ -27,6 +27,7 @@ import { HelpAskQuestionScreen } from '../screens/HelpAskQuestionScreen';
 import { HelpMyQuestionsScreen } from '../screens/HelpMyQuestionsScreen';
 import { ReceiptScanScreen } from '../screens/ReceiptScanScreen';
 import { ReceiptConfirmScreen } from '../screens/ReceiptConfirmScreen';
+import { RecommendationsScreen } from '../screens/RecommendationsScreen';
 import { RecurringEditorScreen } from '../screens/RecurringEditorScreen';
 import { RecurringScreen } from '../screens/RecurringScreen';
 import { theme } from '../theme';
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   HelpMyQuestions: undefined;
   ReceiptScan: undefined;
   ReceiptConfirm: { receipt: ReceiptScanResult };
+  Recommendations: undefined;
   Recurring: undefined;
   RecurringEditor: { rule?: RecurringRule } | undefined;
   AddTransaction: undefined;
@@ -205,6 +207,11 @@ export const RootNavigator = () => {
               name="ReceiptConfirm"
               component={ReceiptConfirmScreen}
               options={{ title: 'Confirm Receipt' }}
+            />
+            <Stack.Screen
+              name="Recommendations"
+              component={RecommendationsScreen}
+              options={{ title: 'Recommendations' }}
             />
             <Stack.Screen
               name="Recurring"

@@ -762,3 +762,30 @@ Expected: clear OCR API key is not configured error.
 Speed objective check
 Compare manual add vs receipt flow on same sample.
 Expected: receipt flow reaches saved transaction with fewer manual fields.
+
+
+Test Cases (Budget Recommendations)
+Screen + API wiring
+Dashboard → Recommendations.
+Expected: list loads for current month without crash.
+Overspending recommendation
+Create category spend this month >20% above its previous 3-month average.
+Expected: recommendation like “X spending is Y% higher than usual”.
+Budget adjustment recommendation
+For one category, exceed planned budget in each of last 3 months.
+Expected: recommendation says category budget exceeded for 3 months and suggests revised amount.
+Income increase savings recommendation
+Make recent 3-month average income at least 10% higher than prior 3 months.
+Expected: recommendation suggests extra monthly saving (5% of current avg income).
+Goal prioritization recommendation
+Have multiple active goals with different deadlines.
+Expected: recommendation prioritizes nearest-deadline goal and shows remaining amount.
+Explainability check
+Open each card and verify Reason line has concrete comparison numbers.
+Expected: no generic AI-style text.
+Priority ordering
+Create conditions for high + medium + low recommendations.
+Expected: high-priority cards appear first.
+No-signal state
+Use sparse/insufficient data.
+Expected: clean “No strong recommendation signals” state.
