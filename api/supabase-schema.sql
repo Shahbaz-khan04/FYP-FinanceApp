@@ -128,3 +128,54 @@ create table if not exists public.anomaly_alerts (
 create index if not exists idx_anomaly_alerts_user_created on public.anomaly_alerts(user_id, created_at desc);
 create index if not exists idx_anomaly_alerts_user_dismissed on public.anomaly_alerts(user_id, is_dismissed);
 create index if not exists idx_anomaly_alerts_transaction on public.anomaly_alerts(transaction_id);
+
+create table if not exists public.faqs (
+  id uuid primary key,
+  question text not null,
+  answer text not null,
+  tags text[] not null default '{}',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_faqs_active_created on public.faqs(is_active, created_at desc);
+
+create table if not exists public.help_questions (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  subject text not null,
+  message text not null,
+  status text not null default 'open' check (status in ('open', 'answered', 'closed')),
+  response text null,
+  responded_at timestamptz null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_help_questions_user_created on public.help_questions(user_id, created_at desc);
+
+insert into public.faqs (id, question, answer, tags, is_active)
+values
+  (
+    '00000000-0000-0000-0000-00000000fa01',
+    'How do I add a transaction?',
+    'Open Transactions, tap Add transaction, fill amount/type/category/date/payment method, then save.',
+    array['transactions', 'add'],
+    true
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fa02',
+    'Why does sync show pending items?',
+    'Pending sync means you created or edited data while offline. Once online, tap Sync Now in Transactions.',
+    array['offline', 'sync'],
+    true
+  ),
+  (
+    '00000000-0000-0000-0000-00000000fa03',
+    'How are budget over-limit warnings calculated?',
+    'Budget usage compares category spending in a month against planned category budget limits.',
+    array['budgets', 'warnings'],
+    true
+  )
+on conflict (id) do nothing;

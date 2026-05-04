@@ -167,6 +167,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
         <ActionButton label="Reports" onPress={() => navigation.navigate('Reports')} />
         <ActionButton label="Forecast" onPress={() => navigation.navigate('Forecast')} />
         <ActionButton label="Alerts" onPress={() => navigation.navigate('Alerts')} />
+        <ActionButton label="Help Center" onPress={() => navigation.navigate('HelpCenter')} />
         <ActionButton label="Budgets" onPress={() => navigation.navigate('Budgets')} />
         <ActionButton label="Goals" onPress={() => navigation.navigate('Goals')} />
         <ActionButton label="Categories" onPress={() => navigation.navigate('Categories')} variant="secondary" />

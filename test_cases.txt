@@ -656,3 +656,73 @@ Refresh behavior
 Change transactions/recurring rules.
 Tap “Refresh Forecast”.
 Verify values update without app restart.
+
+
+Alert Center loads
+Login, go Dashboard → Alerts.
+Expected: screen opens, list loads (may be empty), no crash.
+Unusually high transaction detection
+In one expense category, add 3–5 normal expenses (e.g., 100, 120, 90).
+Add one large expense in same category (e.g., 400+).
+Expected: alert titled “Unusually high transaction” appears.
+Category overspending detection
+Ensure previous 3 months in one category have low/moderate spend.
+In current month, add enough expenses in same category to exceed historical average significantly.
+Expected: “Category overspending detected” alert appears.
+Sudden monthly spending increase
+Keep previous 3 months total expenses relatively low.
+In current month, add enough expenses to create a strong jump.
+Expected: “Sudden spending increase” alert appears.
+Duplicate-looking transaction detection
+Add one transaction (same amount, type, category, date).
+Add another with identical fields.
+Expected: “Possible duplicate transaction” alert appears.
+Transaction warning label
+Go to Transactions list after an alert exists.
+Expected: related transaction card shows warning label (“unusual activity detected”).
+Dismiss alert
+In Alerts screen, press Dismiss on one open alert.
+Expected: it disappears from open list.
+Toggle to “Showing all” and verify dismissed alert is visible as dismissed state.
+Manual anomaly scan
+Press “Scan anomalies now”.
+Expected: scan message appears (Scanned X transactions), list refreshes.
+Auth protection
+Logout and attempt alerts API via app flow.
+Expected: Alerts only accessible when authenticated.
+No duplicate open alerts for same type+transaction
+Trigger same anomaly condition repeatedly by editing transaction without resolving condition.
+Expected: only one open alert per transaction/type combo, not endless duplicates.
+
+
+Test Cases (Help Center)
+Open Dashboard → Help Center.
+Expected: FAQ list loads.
+
+FAQ search.
+Enter keyword like sync and tap Search FAQ.
+Expected: filtered FAQ items shown.
+
+FAQ detail.
+Open any FAQ item.
+Expected: full question and answer displayed.
+
+Ask question validation.
+Try very short subject/message.
+Expected: API validation error shown.
+
+Submit question success.
+Enter valid subject/message and submit.
+Expected: success message.
+
+My Questions list.
+Open My Questions.
+Expected: submitted question appears with OPEN status and “No response yet.”
+
+Auth protection.
+Logout and attempt help question endpoints via app flow.
+Expected: question submit/list requires login.
+
+Navigation flow.
+From Help Center go to Ask Question and My Questions and back.
+Expected: all routes work without crash.

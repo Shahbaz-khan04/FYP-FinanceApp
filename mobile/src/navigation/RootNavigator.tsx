@@ -21,6 +21,10 @@ import { GoalDetailScreen } from '../screens/GoalDetailScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
 import { ForecastScreen } from '../screens/ForecastScreen';
 import { AlertsScreen } from '../screens/AlertsScreen';
+import { HelpCenterScreen } from '../screens/HelpCenterScreen';
+import { HelpFaqDetailScreen } from '../screens/HelpFaqDetailScreen';
+import { HelpAskQuestionScreen } from '../screens/HelpAskQuestionScreen';
+import { HelpMyQuestionsScreen } from '../screens/HelpMyQuestionsScreen';
 import { RecurringEditorScreen } from '../screens/RecurringEditorScreen';
 import { RecurringScreen } from '../screens/RecurringScreen';
 import { theme } from '../theme';
@@ -47,6 +51,10 @@ export type RootStackParamList = {
   Reports: undefined;
   Forecast: undefined;
   Alerts: undefined;
+  HelpCenter: undefined;
+  HelpFaqDetail: { faqId: string };
+  HelpAskQuestion: undefined;
+  HelpMyQuestions: undefined;
   Recurring: undefined;
   RecurringEditor: { rule?: RecurringRule } | undefined;
   AddTransaction: undefined;
@@ -162,6 +170,26 @@ export const RootNavigator = () => {
               name="Alerts"
               component={AlertsScreen}
               options={{ title: 'Alerts' }}
+            />
+            <Stack.Screen
+              name="HelpCenter"
+              component={HelpCenterScreen}
+              options={{ title: 'Help Center' }}
+            />
+            <Stack.Screen
+              name="HelpFaqDetail"
+              component={HelpFaqDetailScreen}
+              options={{ title: 'FAQ Detail' }}
+            />
+            <Stack.Screen
+              name="HelpAskQuestion"
+              component={HelpAskQuestionScreen}
+              options={{ title: 'Ask Question' }}
+            />
+            <Stack.Screen
+              name="HelpMyQuestions"
+              component={HelpMyQuestionsScreen}
+              options={{ title: 'My Questions' }}
             />
             <Stack.Screen
               name="Recurring"
