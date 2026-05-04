@@ -179,3 +179,19 @@ values
     true
   )
 on conflict (id) do nothing;
+
+create table if not exists public.receipts (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  image_url text null,
+  ocr_raw_text text not null default '',
+  extracted_amount numeric(14,2) null,
+  extracted_merchant text null,
+  extracted_date date null,
+  linked_transaction_id uuid null references public.transactions(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_receipts_user_created on public.receipts(user_id, created_at desc);
+create index if not exists idx_receipts_linked_transaction on public.receipts(linked_transaction_id);

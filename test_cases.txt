@@ -726,3 +726,39 @@ Expected: question submit/list requires login.
 Navigation flow.
 From Help Center go to Ask Question and My Questions and back.
 Expected: all routes work without crash.
+
+
+Test Cases (OCR Receipt Scanning)
+Open flow
+Go Transactions → Scan receipt.
+Expected: scan screen opens.
+Gallery upload + OCR
+Pick receipt image from gallery.
+Tap Scan Receipt.
+Expected: loading state shown, then confirm screen opens.
+Camera capture + OCR
+Capture receipt using camera.
+Expected: same confirm flow works.
+URL-based OCR fallback
+Paste a public receipt image URL, tap scan.
+Expected: OCR runs and opens confirm screen.
+Extracted field suggestions
+On confirm screen, verify prefilled:
+amount (best parsed total)
+date (parsed date if present)
+notes (merchant guess)
+Expected: values are editable.
+Create transaction from receipt
+Edit values if needed, tap Create Transaction.
+Expected: transaction created and visible in transaction list.
+Receipt link to transaction
+After create, backend links receipt to transaction.
+Expected: no link errors in app flow.
+Validation/error behavior
+Try scan without selecting image/url.
+Expected: clear validation message.
+Try with OCR key missing.
+Expected: clear OCR API key is not configured error.
+Speed objective check
+Compare manual add vs receipt flow on same sample.
+Expected: receipt flow reaches saved transaction with fewer manual fields.

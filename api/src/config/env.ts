@@ -19,6 +19,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16).default('dev-only-secret-change-me'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   RECURRING_JOB_TOKEN: z.string().optional(),
+  OCR_SPACE_API_KEY: z.string().optional(),
+  OCR_SPACE_API_URL: z.string().url().default('https://api.ocr.space/parse/image'),
 });
 
 export const env = envSchema.parse(process.env);

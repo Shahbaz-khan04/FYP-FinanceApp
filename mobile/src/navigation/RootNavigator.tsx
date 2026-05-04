@@ -25,6 +25,8 @@ import { HelpCenterScreen } from '../screens/HelpCenterScreen';
 import { HelpFaqDetailScreen } from '../screens/HelpFaqDetailScreen';
 import { HelpAskQuestionScreen } from '../screens/HelpAskQuestionScreen';
 import { HelpMyQuestionsScreen } from '../screens/HelpMyQuestionsScreen';
+import { ReceiptScanScreen } from '../screens/ReceiptScanScreen';
+import { ReceiptConfirmScreen } from '../screens/ReceiptConfirmScreen';
 import { RecurringEditorScreen } from '../screens/RecurringEditorScreen';
 import { RecurringScreen } from '../screens/RecurringScreen';
 import { theme } from '../theme';
@@ -32,6 +34,7 @@ import type { TransactionItem } from '../types/transaction';
 import type { BudgetItem } from '../types/budget';
 import type { GoalItem } from '../types/goal';
 import type { RecurringRule } from '../types/recurring';
+import type { ReceiptScanResult } from '../types/receipt';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -55,6 +58,8 @@ export type RootStackParamList = {
   HelpFaqDetail: { faqId: string };
   HelpAskQuestion: undefined;
   HelpMyQuestions: undefined;
+  ReceiptScan: undefined;
+  ReceiptConfirm: { receipt: ReceiptScanResult };
   Recurring: undefined;
   RecurringEditor: { rule?: RecurringRule } | undefined;
   AddTransaction: undefined;
@@ -190,6 +195,16 @@ export const RootNavigator = () => {
               name="HelpMyQuestions"
               component={HelpMyQuestionsScreen}
               options={{ title: 'My Questions' }}
+            />
+            <Stack.Screen
+              name="ReceiptScan"
+              component={ReceiptScanScreen}
+              options={{ title: 'Scan Receipt' }}
+            />
+            <Stack.Screen
+              name="ReceiptConfirm"
+              component={ReceiptConfirmScreen}
+              options={{ title: 'Confirm Receipt' }}
             />
             <Stack.Screen
               name="Recurring"
