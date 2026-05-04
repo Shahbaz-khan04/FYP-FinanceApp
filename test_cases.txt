@@ -618,3 +618,41 @@ Create one recurring rule.
 Run due processing.
 Verify repeated transaction is auto-created without manual transaction entry.
 Expected: repeated activity is automated.
+
+
+
+Base forecast with 3+ months data
+Add income/expense transactions across at least 3 different months.
+Open Forecast screen.
+Verify:
+Expected Income ≈ avg monthly income of last 3 months
+Expected Expenses ≈ avg monthly expenses + recurring projection
+Forecast next month balance = current balance + expected net cash flow
+Recurring projection impact
+Create a recurring expense rule (e.g. monthly 500) with next run in next month.
+Refresh forecast.
+Verify recurring amount appears in “Recurring projection” and increases expected expenses.
+High risk warning
+Ensure expected expenses are greater than expected income (add high expenses or recurring).
+Refresh forecast.
+Verify:
+risk level is HIGH
+warning includes “expenses may exceed income”.
+Medium risk warning
+Adjust data so expected expenses are close to income (around >90% and <=100%).
+Refresh forecast.
+Verify risk level shows MEDIUM.
+Negative projected balance warning
+Make current balance low/negative and net cash flow negative.
+Refresh forecast.
+Verify warning shows forecast balance may become negative.
+Trend chart data
+Check trend section has historical months plus one next-month projected point.
+Verify projected month bars reflect expected income/expenses.
+Auth protection
+Logout and call forecast path indirectly by opening app unauthenticated.
+Verify Forecast is not accessible without login (screen only reachable after auth flow).
+Refresh behavior
+Change transactions/recurring rules.
+Tap “Refresh Forecast”.
+Verify values update without app restart.

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { anomalyService } from './anomaly.service.js';
 import { supabase } from '../db/supabase.js';
 import type { Category, SyncTransactionOperation, Transaction } from '../types/transaction.js';
 import { HttpError } from '../utils/httpError.js';
@@ -194,6 +195,11 @@ export const transactionService = {
       throw new HttpError(500, 'TRANSACTION_CREATE_FAILED', 'Could not create transaction');
     }
 
+    try {
+      await anomalyService.detectForTransaction(userId, data.id);
+    } catch {
+      // Keep transaction writes available even if anomaly pipeline is not configured yet.
+    }
     return data;
   },
 
@@ -226,6 +232,11 @@ export const transactionService = {
       throw new HttpError(500, 'TRANSACTION_UPDATE_FAILED', 'Could not update transaction');
     }
 
+    try {
+      await anomalyService.detectForTransaction(userId, data.id);
+    } catch {
+      // Keep transaction writes available even if anomaly pipeline is not configured yet.
+    }
     return data;
   },
 

@@ -103,3 +103,28 @@ create table if not exists public.recurring_transactions (
 
 create index if not exists idx_recurring_user_id on public.recurring_transactions(user_id);
 create index if not exists idx_recurring_next_run on public.recurring_transactions(next_run_date);
+
+create table if not exists public.anomaly_alerts (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  transaction_id uuid null references public.transactions(id) on delete set null,
+  type text not null check (
+    type in (
+      'high_transaction',
+      'category_overspending',
+      'spending_spike',
+      'duplicate_transaction'
+    )
+  ),
+  severity text not null check (severity in ('low', 'medium', 'high')),
+  title text not null,
+  message text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  is_dismissed boolean not null default false,
+  created_at timestamptz not null default now(),
+  dismissed_at timestamptz null
+);
+
+create index if not exists idx_anomaly_alerts_user_created on public.anomaly_alerts(user_id, created_at desc);
+create index if not exists idx_anomaly_alerts_user_dismissed on public.anomaly_alerts(user_id, is_dismissed);
+create index if not exists idx_anomaly_alerts_transaction on public.anomaly_alerts(transaction_id);

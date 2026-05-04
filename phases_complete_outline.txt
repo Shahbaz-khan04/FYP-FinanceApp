@@ -419,72 +419,8 @@ Examples:
 Minimum success condition:
 
 App gives useful, explainable recommendations, not vague AI text.
-Phase 3: Business, Admin, and Support
-This phase supports freelancers and small business owners.
 
-1. Business Mode
-
-Build:
-
-Toggle personal/business transaction type
-Separate reports for personal and business
-Business categories
-Business dashboard
-Transaction addition should include:
-
-Personal transaction
-Business transaction
-Minimum success condition:
-
-User can separate personal and business finances cleanly.
-2. Profit and Loss Report
-
-Build:
-
-Business income
-Business expenses
-Net profit/loss
-Monthly P&L
-Exportable report later if needed
-Backend work:
-
-Business income aggregation
-Business expense aggregation
-P&L calculation API
-Mobile work:
-
-P&L report screen
-Month/year selector
-Chart/table view
-Minimum success condition:
-
-Freelancer/business user can see whether their business made profit or loss.
-3. Invoices
-
-Optional but useful for business users.
-
-Build:
-
-Create invoice
-Add client name
-Add line items
-Set due date
-Mark as paid/unpaid
-Convert paid invoice into income transaction
-Invoice fields:
-
-Invoice number
-Client
-Items
-Subtotal
-Discount
-Total
-Due date
-Status
-Minimum success condition:
-
-User can track invoices and business income.
-4. Help Center
+1. Help Center
 
 Build:
 
@@ -506,32 +442,7 @@ Response APIs
 Minimum success condition:
 
 Users can find help and ask questions.
-5. Admin Panel
 
-This can be web-based instead of mobile.
-
-Build:
-
-Admin login
-Manage FAQs
-View submitted questions
-Respond to questions
-Basic user overview
-Backend work:
-
-Admin auth
-FAQ management APIs
-Question response APIs
-Admin authorization middleware
-Frontend work:
-
-Admin login page
-FAQ CRUD page
-Questions page
-Response form
-Minimum success condition:
-
-Admin can manage help content without changing the database manually.
 Phase 4: Multi-Currency, Polish, and Production Readiness
 This phase improves completeness, reliability, and presentation quality.
 
@@ -696,3 +607,104 @@ For the first real development milestone, I’d define it as:
 Milestone 1: A logged-in user can add income/expense transactions, categorize them, and see a dashboard summary.
 
 That gives you a working app early, then every later feature improves it instead of delaying the first usable version.
+
+
+
+
+
+5. Admin Panel
+
+This can be web-based instead of mobile.
+
+Build:
+
+Admin login
+Manage FAQs
+View submitted questions
+Respond to questions
+Basic user overview
+Backend work:
+
+Admin auth
+FAQ management APIs
+Question response APIs
+Admin authorization middleware
+Frontend work:
+
+Admin login page
+FAQ CRUD page
+Questions page
+Response form
+Minimum success condition:
+
+Admin can manage help content without changing the database manually.
+
+
+
+
+
+Phase 3: Business, Admin, and Support
+This phase supports freelancers and small business owners.
+
+1. Business Mode
+
+Build:
+
+Toggle personal/business transaction type
+Separate reports for personal and business
+Business categories
+Business dashboard
+Transaction addition should include:
+
+Personal transaction
+Business transaction
+Minimum success condition:
+
+User can separate personal and business finances cleanly.
+2. Profit and Loss Report
+
+Build:
+
+Business income
+Business expenses
+Net profit/loss
+Monthly P&L
+Exportable report later if needed
+Backend work:
+
+Business income aggregation
+Business expense aggregation
+P&L calculation API
+Mobile work:
+
+P&L report screen
+Month/year selector
+Chart/table view
+Minimum success condition:
+
+Freelancer/business user can see whether their business made profit or loss.
+3. Invoices
+
+Optional but useful for business users.
+
+Build:
+
+Create invoice
+Add client name
+Add line items
+Set due date
+Mark as paid/unpaid
+Convert paid invoice into income transaction
+Invoice fields:
+
+Invoice number
+Client
+Items
+Subtotal
+Discount
+Total
+Due date
+Status
+Minimum success condition:
+
+User can track invoices and business income.

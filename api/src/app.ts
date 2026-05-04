@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { logger } from './config/logger.js';
 import { authRouter } from './routes/auth.routes.js';
+import { alertRouter } from './routes/alert.routes.js';
 import { budgetRouter } from './routes/budget.routes.js';
 import { categoryRouter } from './routes/category.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
@@ -26,6 +27,7 @@ export const createApp = () => {
 
   app.use('/health', healthRouter);
   app.use('/auth', authRouter);
+  app.use('/alerts', alertRouter);
   app.use('/users', userRouter);
   app.use('/categories', categoryRouter);
   app.use('/transactions', transactionRouter);

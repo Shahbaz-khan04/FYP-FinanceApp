@@ -5,11 +5,13 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { alertsApi } from '../lib/alertsApi';
 import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { Category, TransactionItem, TransactionType } from '../types/transaction';
+import type { AnomalyAlert } from '../types/alert';
 import { ActionButton, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>;
@@ -27,6 +29,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'offline'>('idle');
+  const [openAlerts, setOpenAlerts] = useState<AnomalyAlert[]>([]);
 
   const total = useMemo(
     () => transactions.reduce((sum, item) => sum + (item.type === 'income' ? item.amount : -item.amount), 0),
@@ -50,6 +53,12 @@ export const TransactionsScreen = ({ navigation }: Props) => {
       ]);
       setTransactions(tx);
       setCategories(cats);
+      try {
+        const alerts = await alertsApi.list(token, false);
+        setOpenAlerts(alerts);
+      } catch {
+        setOpenAlerts([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }
@@ -230,6 +239,11 @@ export const TransactionsScreen = ({ navigation }: Props) => {
               marginBottom: theme.spacing[2],
             }}
           >
+            {openAlerts.some((alert) => alert.transactionId === item.id && !alert.isDismissed) ? (
+              <Text style={{ ...theme.typography.caption, color: theme.colors.state.warning, marginBottom: theme.spacing[1] }}>
+                Warning: unusual activity detected
+              </Text>
+            ) : null}
             <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>
               {item.currency} {item.amount.toFixed(2)} • {item.type}
             </Text>
