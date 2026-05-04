@@ -22,6 +22,7 @@ export const SettingsScreen = () => {
     [user?.settings],
   );
   const [notificationsEnabled, setNotificationsEnabled] = useState(defaults.notificationsEnabled);
+  const [appTheme, setAppTheme] = useState<'dark' | 'light'>(defaults.theme);
   const [currency, setCurrency] = useState(defaults.currency ?? 'PKR');
   const [billReminders, setBillReminders] = useState(defaults.billReminders);
   const [budgetAlerts, setBudgetAlerts] = useState(defaults.budgetAlerts);
@@ -55,7 +56,7 @@ export const SettingsScreen = () => {
       setError('');
       await updateSettings({
         notificationsEnabled,
-        theme: 'dark',
+        theme: appTheme,
         currency,
         billReminders,
         budgetAlerts,
@@ -88,6 +89,39 @@ export const SettingsScreen = () => {
           Notifications
         </Text>
         <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
+      </View>
+      <View
+        style={{
+          marginTop: theme.spacing[3],
+          paddingVertical: theme.spacing[3],
+          paddingHorizontal: theme.spacing[3],
+          borderRadius: theme.radius.md,
+          backgroundColor: theme.colors.background.surface,
+          borderWidth: 1,
+          borderColor: theme.colors.border.subtle,
+        }}
+      >
+        <Text style={{ ...theme.typography.body, color: theme.colors.text.primary, marginBottom: theme.spacing[2] }}>
+          Theme
+        </Text>
+        <View style={{ flexDirection: 'row', gap: theme.spacing[2] }}>
+          {(['dark', 'light'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              onPress={() => setAppTheme(mode)}
+              style={{
+                backgroundColor: appTheme === mode ? theme.colors.brand.primary : theme.colors.background.surfaceRaised,
+                paddingVertical: theme.spacing[2],
+                paddingHorizontal: theme.spacing[3],
+                borderRadius: theme.radius.pill,
+              }}
+            >
+              <Text style={{ color: appTheme === mode ? theme.colors.text.inverse : theme.colors.text.primary }}>
+                {mode === 'dark' ? 'Dark' : 'Light'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
       <View
         style={{

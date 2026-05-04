@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { currencyService } from './currency.service.js';
 import { supabase } from '../db/supabase.js';
 import { HttpError } from '../utils/httpError.js';
 
@@ -22,6 +23,7 @@ const monthRange = (month: string) => {
 export const budgetService = {
   async listBudgets(userId: string, month: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const { start, end } = monthRange(month);
 
     const [{ data: budgets, error: budgetError }, { data: expenses, error: expenseError }] =
@@ -33,7 +35,7 @@ export const budgetService = {
           .eq('month', month),
         db
           .from('transactions')
-          .select('amount, category_id')
+          .select('amount, currency, category_id')
           .eq('user_id', userId)
           .eq('type', 'expense')
           .gte('date', start)
@@ -50,7 +52,17 @@ export const budgetService = {
     const actualByCategory = new Map<string, number>();
     for (const tx of expenses ?? []) {
       const key = (tx as any).category_id ?? 'uncategorized';
-      actualByCategory.set(key, (actualByCategory.get(key) ?? 0) + Number((tx as any).amount));
+      actualByCategory.set(
+        key,
+        (actualByCategory.get(key) ?? 0) +
+          currencyService.convertAmount(
+            Number((tx as any).amount),
+            (tx as any).currency,
+            preferredCurrency,
+            ratesBase,
+            rates,
+          ),
+      );
     }
 
     return (budgets ?? []).map((budget: any) => {
@@ -139,4 +151,3 @@ export const budgetService = {
     }
   },
 };
-

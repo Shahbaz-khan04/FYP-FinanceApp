@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { currencyService } from './currency.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 type RecommendationType =
@@ -51,6 +52,7 @@ const buildExpenseByCategory = (rows: any[]) => {
 export const recommendationService = {
   async getRecommendations(userId: string, month?: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const selectedMonth = month ?? currentMonth();
     const lastMonths = [selectedMonth, shiftMonth(selectedMonth, -1), shiftMonth(selectedMonth, -2)];
     const allMonths = [...lastMonths, shiftMonth(selectedMonth, -3), shiftMonth(selectedMonth, -4), shiftMonth(selectedMonth, -5)];
@@ -62,7 +64,7 @@ export const recommendationService = {
       await Promise.all([
         db
           .from('transactions')
-          .select('amount,type,category_id,date,categories(name)')
+          .select('amount,currency,type,category_id,date,categories(name)')
           .eq('user_id', userId)
           .gte('date', startWindow)
           .lte('date', endWindow),
@@ -98,7 +100,13 @@ export const recommendationService = {
     for (const row of transactions as any[]) {
       const monthKey = String(row.date).slice(0, 7);
       if (!monthExpenseByCategory.has(monthKey)) continue;
-      const amount = Number(row.amount);
+      const amount = currencyService.convertAmount(
+        Number(row.amount),
+        row.currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       if (row.type === 'income') {
         monthIncomeTotals.set(monthKey, (monthIncomeTotals.get(monthKey) ?? 0) + amount);
       } else {

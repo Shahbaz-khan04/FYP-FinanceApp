@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { currencyService } from './currency.service.js';
 import { notificationService } from './notification.service.js';
 import { supabase } from '../db/supabase.js';
 import type { RecurringFrequency, RecurringTransactionRule } from '../types/recurring.js';
@@ -165,6 +166,7 @@ export const recurringService = {
     const updatedRuleIds: string[] = [];
 
     for (const rule of rules ?? []) {
+      const recurringCurrency = await currencyService.getUserPreferredCurrency(rule.user_id);
       let runDate = rule.next_run_date;
       const stopDate = today();
       let safety = 0;
@@ -176,7 +178,7 @@ export const recurringService = {
           amount: rule.amount,
           type: 'expense',
           category_id: rule.category_id,
-          currency: 'PKR',
+          currency: recurringCurrency,
           payment_method: 'Recurring',
           date: runDate,
           notes: 'Auto-created from recurring rule',

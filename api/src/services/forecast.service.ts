@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { currencyService } from './currency.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 const requireDb = () => {
@@ -34,6 +35,7 @@ const nextDate = (fromDate: string, frequency: 'weekly' | 'monthly' | 'custom', 
 export const forecastService = {
   async getForecast(userId: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const now = new Date();
     const curMonthStart = monthStart(now);
     const nextMonthStart = monthStart(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)));
@@ -44,7 +46,7 @@ export const forecastService = {
     const [txRes, recurringRes] = await Promise.all([
       db
         .from('transactions')
-        .select('amount,type,date')
+        .select('amount,type,date,currency')
         .eq('user_id', userId)
         .gte('date', fmtDate(last3Start))
         .lte('date', fmtDate(now)),
@@ -71,7 +73,13 @@ export const forecastService = {
       const m = String((row as any).date).slice(0, 7);
       if (!monthlyMap.has(m)) continue;
       const bucket = monthlyMap.get(m)!;
-      const amount = Number((row as any).amount);
+      const amount = currencyService.convertAmount(
+        Number((row as any).amount),
+        (row as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       if ((row as any).type === 'income') bucket.income += amount;
       else bucket.expenses += amount;
     }
@@ -97,7 +105,11 @@ export const forecastService = {
     }
 
     const currentBalance = txs.reduce(
-      (sum, row: any) => sum + (row.type === 'income' ? Number(row.amount) : -Number(row.amount)),
+      (sum, row: any) =>
+        sum +
+        (row.type === 'income'
+          ? currencyService.convertAmount(Number(row.amount), row.currency, preferredCurrency, ratesBase, rates)
+          : -currencyService.convertAmount(Number(row.amount), row.currency, preferredCurrency, ratesBase, rates)),
       0,
     );
 
@@ -147,4 +159,3 @@ export const forecastService = {
     };
   },
 };
-

@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { currencyService } from './currency.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 const requireDb = () => {
@@ -35,9 +36,10 @@ const weekLabel = (dateStr: string) => {
 export const reportService = {
   async incomeVsExpenses(userId: string, startDate: string, endDate: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const { data, error } = await db
       .from('transactions')
-      .select('amount,type,date')
+      .select('amount,type,date,currency')
       .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate);
@@ -53,7 +55,13 @@ export const reportService = {
       const key = String((row as any).date).slice(0, 7);
       const bucket = buckets.get(key);
       if (!bucket) continue;
-      const amount = Number((row as any).amount);
+      const amount = currencyService.convertAmount(
+        Number((row as any).amount),
+        (row as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       if ((row as any).type === 'income') bucket.income += amount;
       else bucket.expenses += amount;
     }
@@ -63,9 +71,10 @@ export const reportService = {
 
   async categorySpending(userId: string, startDate: string, endDate: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const { data, error } = await db
       .from('transactions')
-      .select('amount,categories(name,color,icon)')
+      .select('amount,currency,categories(name,color,icon)')
       .eq('user_id', userId)
       .eq('type', 'expense')
       .gte('date', startDate)
@@ -81,7 +90,13 @@ export const reportService = {
         : (row as any).categories;
       const name = category?.name ?? 'Uncategorized';
       const key = name;
-      const amount = Number((row as any).amount);
+      const amount = currencyService.convertAmount(
+        Number((row as any).amount),
+        (row as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       total += amount;
       const current = map.get(key) ?? {
         category: name,
@@ -100,9 +115,10 @@ export const reportService = {
 
   async spendingTrend(userId: string, startDate: string, endDate: string, granularity: 'daily' | 'weekly') {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const { data, error } = await db
       .from('transactions')
-      .select('amount,date')
+      .select('amount,currency,date')
       .eq('user_id', userId)
       .eq('type', 'expense')
       .gte('date', startDate)
@@ -115,7 +131,17 @@ export const reportService = {
     for (const row of data ?? []) {
       const dateStr = String((row as any).date);
       const key = granularity === 'daily' ? dateStr : weekLabel(dateStr);
-      buckets.set(key, (buckets.get(key) ?? 0) + Number((row as any).amount));
+      buckets.set(
+        key,
+        (buckets.get(key) ?? 0) +
+          currencyService.convertAmount(
+            Number((row as any).amount),
+            (row as any).currency,
+            preferredCurrency,
+            ratesBase,
+            rates,
+          ),
+      );
     }
 
     return Array.from(buckets.entries()).map(([period, amount]) => ({ period, amount }));
@@ -123,6 +149,7 @@ export const reportService = {
 
   async budgetVsActual(userId: string, month: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const start = `${month}-01`;
     const end = day(new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)));
 
@@ -132,9 +159,9 @@ export const reportService = {
         .select('planned_amount,category_id,categories(name,color,icon)')
         .eq('user_id', userId)
         .eq('month', month),
-      db
-        .from('transactions')
-        .select('amount,category_id')
+        db
+          .from('transactions')
+        .select('amount,currency,category_id')
         .eq('user_id', userId)
         .eq('type', 'expense')
         .gte('date', start)
@@ -146,7 +173,17 @@ export const reportService = {
     const actual = new Map<string, number>();
     for (const tx of txs ?? []) {
       const key = (tx as any).category_id ?? 'uncategorized';
-      actual.set(key, (actual.get(key) ?? 0) + Number((tx as any).amount));
+      actual.set(
+        key,
+        (actual.get(key) ?? 0) +
+          currencyService.convertAmount(
+            Number((tx as any).amount),
+            (tx as any).currency,
+            preferredCurrency,
+            ratesBase,
+            rates,
+          ),
+      );
     }
 
     return (budgets ?? []).map((b: any) => {
@@ -189,4 +226,3 @@ export const reportService = {
     });
   },
 };
-

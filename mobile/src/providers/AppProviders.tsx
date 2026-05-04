@@ -5,10 +5,10 @@ import { ThemeProvider } from '../theme';
 
 export const AppProviders = ({ children }: PropsWithChildren) => {
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
         <NotificationProvider>{children}</NotificationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 };

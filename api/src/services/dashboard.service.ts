@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { currencyService } from './currency.service.js';
 import { goalService } from './goal.service.js';
 import { HttpError } from '../utils/httpError.js';
 
@@ -33,6 +34,7 @@ export const dashboardService = {
     const db = requireDb();
     const selectedMonth = month ?? currentMonth();
     const { start, end } = toMonthRange(selectedMonth);
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
 
     const [{ data, error }, { data: budgets, error: budgetsError }, goalProgress] = await Promise.all([
       db
@@ -63,10 +65,20 @@ export const dashboardService = {
     const transactions = data ?? [];
     const income = transactions
       .filter((item: any) => item.type === 'income')
-      .reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+      .reduce(
+        (sum: number, item: any) =>
+          sum +
+          currencyService.convertAmount(Number(item.amount), item.currency, preferredCurrency, ratesBase, rates),
+        0,
+      );
     const expenses = transactions
       .filter((item: any) => item.type === 'expense')
-      .reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+      .reduce(
+        (sum: number, item: any) =>
+          sum +
+          currencyService.convertAmount(Number(item.amount), item.currency, preferredCurrency, ratesBase, rates),
+        0,
+      );
 
     const expenseByCategory = new Map<
       string,
@@ -84,7 +96,13 @@ export const dashboardService = {
         color: category?.color ?? '#94A3B8',
         icon: category?.icon ?? 'circle',
       };
-      existing.total += Number(item.amount);
+      existing.total += currencyService.convertAmount(
+        Number(item.amount),
+        (item as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       expenseByCategory.set(key, existing);
     }
 
@@ -134,12 +152,13 @@ export const dashboardService = {
 
   async getMonthlyTotals(userId: string, months = 6) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const end = new Date();
     const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - (months - 1), 1));
 
     const { data, error } = await db
-      .from('transactions')
-      .select('amount, type, date')
+        .from('transactions')
+      .select('amount, type, date, currency')
       .eq('user_id', userId)
       .gte('date', start.toISOString().slice(0, 10));
 
@@ -158,7 +177,13 @@ export const dashboardService = {
       const month = String((row as any).date).slice(0, 7);
       const bucket = buckets.get(month);
       if (!bucket) continue;
-      const amount = Number((row as any).amount);
+      const amount = currencyService.convertAmount(
+        Number((row as any).amount),
+        (row as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       if ((row as any).type === 'income') bucket.income += amount;
       else bucket.expenses += amount;
       bucket.balance = bucket.income - bucket.expenses;
@@ -169,12 +194,13 @@ export const dashboardService = {
 
   async getCategoryBreakdown(userId: string, month?: string) {
     const db = requireDb();
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
     const selectedMonth = month ?? currentMonth();
     const { start, end } = toMonthRange(selectedMonth);
 
     const { data, error } = await db
       .from('transactions')
-      .select('amount, categories(id,name,color,icon)')
+      .select('amount, currency, categories(id,name,color,icon)')
       .eq('user_id', userId)
       .eq('type', 'expense')
       .gte('date', start)
@@ -193,7 +219,13 @@ export const dashboardService = {
     for (const row of data ?? []) {
       const category = normalizeCategory((row as any).categories);
       const key = category?.id ?? 'uncategorized';
-      const amount = Number((row as any).amount);
+      const amount = currencyService.convertAmount(
+        Number((row as any).amount),
+        (row as any).currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
       totalExpense += amount;
       const existing = totals.get(key) ?? {
         categoryId: category?.id ?? null,
