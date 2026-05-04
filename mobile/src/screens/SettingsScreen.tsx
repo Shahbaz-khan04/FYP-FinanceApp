@@ -8,11 +8,26 @@ import { ActionButton, Screen } from './common';
 export const SettingsScreen = () => {
   const { user, token, updateSettings } = useAuth();
   const defaults = useMemo(
-    () => user?.settings ?? { notificationsEnabled: true, theme: 'dark' as const, currency: 'PKR' },
+    () =>
+      user?.settings ?? {
+        notificationsEnabled: true,
+        theme: 'dark' as const,
+        currency: 'PKR',
+        billReminders: true,
+        budgetAlerts: true,
+        goalAlerts: true,
+        recurringAlerts: true,
+        anomalyAlerts: true,
+      },
     [user?.settings],
   );
   const [notificationsEnabled, setNotificationsEnabled] = useState(defaults.notificationsEnabled);
   const [currency, setCurrency] = useState(defaults.currency ?? 'PKR');
+  const [billReminders, setBillReminders] = useState(defaults.billReminders);
+  const [budgetAlerts, setBudgetAlerts] = useState(defaults.budgetAlerts);
+  const [goalAlerts, setGoalAlerts] = useState(defaults.goalAlerts);
+  const [recurringAlerts, setRecurringAlerts] = useState(defaults.recurringAlerts);
+  const [anomalyAlerts, setAnomalyAlerts] = useState(defaults.anomalyAlerts);
   const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -42,6 +57,11 @@ export const SettingsScreen = () => {
         notificationsEnabled,
         theme: 'dark',
         currency,
+        billReminders,
+        budgetAlerts,
+        goalAlerts,
+        recurringAlerts,
+        anomalyAlerts,
       });
       setMessage('Settings updated');
     } catch (err) {
@@ -68,6 +88,36 @@ export const SettingsScreen = () => {
           Notifications
         </Text>
         <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
+      </View>
+      <View
+        style={{
+          marginTop: theme.spacing[3],
+          paddingVertical: theme.spacing[3],
+          paddingHorizontal: theme.spacing[3],
+          borderRadius: theme.radius.md,
+          backgroundColor: theme.colors.background.surface,
+          borderWidth: 1,
+          borderColor: theme.colors.border.subtle,
+          gap: theme.spacing[2],
+        }}
+      >
+        {[
+          ['Bill reminders', billReminders, setBillReminders],
+          ['Budget alerts', budgetAlerts, setBudgetAlerts],
+          ['Goal alerts', goalAlerts, setGoalAlerts],
+          ['Recurring alerts', recurringAlerts, setRecurringAlerts],
+          ['Anomaly alerts', anomalyAlerts, setAnomalyAlerts],
+        ].map(([label, value, setter]) => (
+          <View
+            key={String(label)}
+            style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
+              {String(label)}
+            </Text>
+            <Switch value={Boolean(value)} onValueChange={(setter as (v: boolean) => void)} />
+          </View>
+        ))}
       </View>
       <View
         style={{

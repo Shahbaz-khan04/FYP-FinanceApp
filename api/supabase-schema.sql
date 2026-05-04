@@ -195,3 +195,31 @@ create table if not exists public.receipts (
 
 create index if not exists idx_receipts_user_created on public.receipts(user_id, created_at desc);
 create index if not exists idx_receipts_linked_transaction on public.receipts(linked_transaction_id);
+
+create table if not exists public.app_notifications (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  type text not null check (
+    type in (
+      'bill_reminder',
+      'budget_overspending',
+      'goal_milestone',
+      'recurring_reminder',
+      'recurring_recorded',
+      'anomaly_alert'
+    )
+  ),
+  title text not null,
+  message text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  dedupe_key text null,
+  is_read boolean not null default false,
+  is_dismissed boolean not null default false,
+  created_at timestamptz not null default now(),
+  read_at timestamptz null,
+  dismissed_at timestamptz null
+);
+
+create index if not exists idx_notifications_user_created on public.app_notifications(user_id, created_at desc);
+create index if not exists idx_notifications_user_read on public.app_notifications(user_id, is_read, is_dismissed);
+create unique index if not exists idx_notifications_user_dedupe on public.app_notifications(user_id, dedupe_key) where dedupe_key is not null;

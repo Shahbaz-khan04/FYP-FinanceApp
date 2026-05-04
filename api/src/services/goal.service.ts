@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { notificationService } from './notification.service.js';
 import { supabase } from '../db/supabase.js';
 import type { Goal } from '../types/goal.js';
 import { HttpError } from '../utils/httpError.js';
@@ -28,6 +29,28 @@ const toGoalView = (goal: Goal) => {
     createdAt: goal.created_at,
     updatedAt: goal.updated_at,
   };
+};
+
+const emitGoalMilestones = async (
+  userId: string,
+  goal: { id: string; title: string; target: number; saved: number },
+) => {
+  if (goal.target <= 0) return;
+  const progress = (goal.saved / goal.target) * 100;
+  for (const milestone of [25, 50, 75, 100]) {
+    if (progress < milestone) continue;
+    try {
+      await notificationService.create(userId, {
+        type: 'goal_milestone',
+        title: 'Goal milestone reached',
+        message: `${goal.title}: reached ${milestone}% progress.`,
+        dedupeKey: `goal-${goal.id}-${milestone}`,
+        metadata: { goalId: goal.id, milestone, progress },
+      });
+    } catch {
+      // Keep goal writes non-blocking for notification failures.
+    }
+  }
 };
 
 export const goalService = {
@@ -76,6 +99,12 @@ export const goalService = {
       throw new HttpError(500, 'GOAL_CREATE_FAILED', 'Could not create goal');
     }
 
+    await emitGoalMilestones(userId, {
+      id: data.id,
+      title: data.title,
+      target: Number(data.target_amount),
+      saved: Number(data.saved_amount),
+    });
     return toGoalView(data);
   },
 
@@ -121,6 +150,12 @@ export const goalService = {
       throw new HttpError(500, 'GOAL_UPDATE_FAILED', 'Could not update goal');
     }
 
+    await emitGoalMilestones(userId, {
+      id: data.id,
+      title: data.title,
+      target: Number(data.target_amount),
+      saved: Number(data.saved_amount),
+    });
     return toGoalView(data);
   },
 
@@ -166,4 +201,3 @@ export const goalService = {
     return data;
   },
 };
-

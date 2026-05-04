@@ -512,53 +512,7 @@ Accessibility basics
 Minimum success condition:
 
 The app feels complete and easy to use during demo.
-6. Testing
 
-Add tests gradually.
-
-Test areas:
-
-Auth
-Transaction CRUD
-Budget calculations
-Goal progress
-Currency conversion
-Forecasting logic
-Sync behavior
-Admin APIs
-Testing types:
-
-Unit tests for calculations
-API tests for backend
-Component tests for important UI
-Manual QA checklist for final demo
-Minimum success condition:
-
-Critical flows are tested and stable.
-Recommended Build Order
-I would tackle it in this order:
-
-Project setup and database design
-Auth
-Manual transactions
-Categories/tags
-Dashboard
-Budgets
-Goals
-Reports/charts
-Offline transaction storage
-Sync
-OCR receipt scanning
-AI/rule-based categorization
-Forecasting
-Anomaly alerts
-Business mode
-P&L reports
-Help center
-Admin panel
-Multi-currency
-Notifications
-Security, testing, and polish
 For the first real development milestone, I’d define it as:
 
 Milestone 1: A logged-in user can add income/expense transactions, categorize them, and see a dashboard summary.

@@ -1,11 +1,14 @@
 import { type PropsWithChildren } from 'react';
 import { AuthProvider } from '../context/AuthContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { ThemeProvider } from '../theme';
 
 export const AppProviders = ({ children }: PropsWithChildren) => {
   return (
     <ThemeProvider>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <NotificationProvider>{children}</NotificationProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };

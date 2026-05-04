@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { notificationService } from './notification.service.js';
 import { supabase } from '../db/supabase.js';
 import type { RecurringFrequency, RecurringTransactionRule } from '../types/recurring.js';
 import { HttpError } from '../utils/httpError.js';
@@ -186,6 +187,17 @@ export const recurringService = {
         if (txError) {
           throw new HttpError(500, 'RECURRING_TX_CREATE_FAILED', 'Could not create recurring transaction');
         }
+        try {
+          await notificationService.create(rule.user_id, {
+            type: 'recurring_recorded',
+            title: 'Recurring transaction recorded',
+            message: `A recurring expense of ${Number(rule.amount).toFixed(2)} was recorded for ${runDate}.`,
+            dedupeKey: `recurring-recorded-${rule.id}-${runDate}`,
+            metadata: { ruleId: rule.id, date: runDate, amount: Number(rule.amount) },
+          });
+        } catch {
+          // Keep recurring processor resilient if notifications are unavailable.
+        }
         createdCount += 1;
         runDate = nextDate(runDate, rule.frequency, rule.custom_days);
         safety += 1;
@@ -208,4 +220,3 @@ export const recurringService = {
     return { processedRules: updatedRuleIds.length, createdTransactions: createdCount, updatedRuleIds };
   },
 };
-

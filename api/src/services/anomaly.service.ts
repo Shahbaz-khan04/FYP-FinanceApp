@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { notificationService } from './notification.service.js';
 import { supabase } from '../db/supabase.js';
 import type { AlertSeverity, AlertType, AnomalyAlert } from '../types/alert.js';
 import { HttpError } from '../utils/httpError.js';
@@ -371,6 +372,18 @@ export const anomalyService = {
       throw new HttpError(500, 'ALERT_CREATE_FAILED', 'Could not create anomaly alert');
     }
 
-    return (data as any).id as string;
+    const alertId = (data as any).id as string;
+    try {
+      await notificationService.create(userId, {
+        type: 'anomaly_alert',
+        title: payload.title,
+        message: payload.message,
+        dedupeKey: `anomaly-${payload.type}-${payload.transactionId}`,
+        metadata: { alertId, ...payload.metadata },
+      });
+    } catch {
+      // Do not block anomaly flow if notifications are not fully configured.
+    }
+    return alertId;
   },
 };

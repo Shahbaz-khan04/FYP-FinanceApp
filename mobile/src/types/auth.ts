@@ -2,6 +2,11 @@ export type UserSettings = {
   notificationsEnabled: boolean;
   theme: 'dark' | 'light';
   currency: string;
+  billReminders: boolean;
+  budgetAlerts: boolean;
+  goalAlerts: boolean;
+  recurringAlerts: boolean;
+  anomalyAlerts: boolean;
 };
 
 export type AuthUser = {

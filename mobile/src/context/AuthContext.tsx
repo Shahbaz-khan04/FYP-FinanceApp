@@ -65,7 +65,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const normalizeSettings = (value: unknown): UserSettings => {
   if (!value || typeof value !== 'object') {
-    return { notificationsEnabled: true, theme: 'dark', currency: 'PKR' };
+    return {
+      notificationsEnabled: true,
+      theme: 'dark',
+      currency: 'PKR',
+      billReminders: true,
+      budgetAlerts: true,
+      goalAlerts: true,
+      recurringAlerts: true,
+      anomalyAlerts: true,
+    };
   }
 
   const raw = value as Partial<UserSettings>;
@@ -74,6 +83,11 @@ const normalizeSettings = (value: unknown): UserSettings => {
       typeof raw.notificationsEnabled === 'boolean' ? raw.notificationsEnabled : true,
     theme: raw.theme === 'light' ? 'light' : 'dark',
     currency: typeof raw.currency === 'string' && raw.currency.length === 3 ? raw.currency.toUpperCase() : 'PKR',
+    billReminders: raw.billReminders !== false,
+    budgetAlerts: raw.budgetAlerts !== false,
+    goalAlerts: raw.goalAlerts !== false,
+    recurringAlerts: raw.recurringAlerts !== false,
+    anomalyAlerts: raw.anomalyAlerts !== false,
   };
 };
 

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { useNotificationCenter } from '../context/NotificationContext';
 import { convertAmount, formatMoney, getPreferredCurrency } from '../lib/currency';
 import { dashboardApi } from '../lib/dashboardApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -22,6 +23,7 @@ const shiftMonth = (month: string, delta: number) => {
 
 export const DashboardScreen = ({ navigation }: Props) => {
   const { token, logout, user, currencyRates, currencyRatesBase } = useAuth();
+  const { unreadCount } = useNotificationCenter();
   const preferredCurrency = getPreferredCurrency(user?.settings);
   const [month, setMonth] = useState(currentMonth());
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -173,6 +175,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
         <ActionButton label="Reports" onPress={() => navigation.navigate('Reports')} />
         <ActionButton label="Forecast" onPress={() => navigation.navigate('Forecast')} />
         <ActionButton label="Alerts" onPress={() => navigation.navigate('Alerts')} />
+        <ActionButton
+          label={`Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+          onPress={() => navigation.navigate('Notifications')}
+        />
         <ActionButton label="Help Center" onPress={() => navigation.navigate('HelpCenter')} />
         <ActionButton label="Recommendations" onPress={() => navigation.navigate('Recommendations')} />
         <ActionButton label="Budgets" onPress={() => navigation.navigate('Budgets')} />
