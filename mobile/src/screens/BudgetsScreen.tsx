@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
 import { budgetApi } from '../lib/budgetApi';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { BudgetItem } from '../types/budget';
@@ -20,7 +21,8 @@ const shiftMonth = (month: string, delta: number) => {
 };
 
 export const BudgetsScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [month, setMonth] = useState(currentMonth());
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [error, setError] = useState('');
@@ -61,7 +63,7 @@ export const BudgetsScreen = ({ navigation }: Props) => {
 
       <View style={{ marginTop: theme.spacing[2], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
         <Text style={{ color: theme.colors.text.secondary }}>
-          Planned: {totals.planned.toFixed(2)} • Spent: {totals.actual.toFixed(2)} • Remaining: {totals.remaining.toFixed(2)}
+          Planned: {formatMoney(totals.planned, preferredCurrency)} • Spent: {formatMoney(totals.actual, preferredCurrency)} • Remaining: {formatMoney(totals.remaining, preferredCurrency)}
         </Text>
       </View>
 
@@ -91,7 +93,7 @@ export const BudgetsScreen = ({ navigation }: Props) => {
               <Text style={{ color: theme.colors.text.secondary }}>{item.percentUsed.toFixed(0)}%</Text>
             </View>
             <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
-              Planned {item.plannedAmount.toFixed(2)} • Actual {item.actualAmount.toFixed(2)} • Remaining {item.remainingAmount.toFixed(2)}
+              Planned {formatMoney(item.plannedAmount, preferredCurrency)} • Actual {formatMoney(item.actualAmount, preferredCurrency)} • Remaining {formatMoney(item.remainingAmount, preferredCurrency)}
             </Text>
             <View style={{ height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.colors.background.surfaceRaised, marginTop: theme.spacing[2] }}>
               <View
@@ -111,4 +113,3 @@ export const BudgetsScreen = ({ navigation }: Props) => {
     </Screen>
   );
 };
-

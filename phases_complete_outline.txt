@@ -446,37 +446,29 @@ Users can find help and ask questions.
 Phase 4: Multi-Currency, Polish, and Production Readiness
 This phase improves completeness, reliability, and presentation quality.
 
-1. Multi-Currency Support
+1. Currency Selector
 
 Build:
 
-User default currency
-Add transaction in any supported currency
-Store original amount and currency
-Store converted amount
-Fetch exchange rates
-Consolidated reports in default currency
-Transaction currency fields:
+Allow the user to choose one preferred currency for the app.
 
-Original amount
-Original currency
-Exchange rate used
-Converted amount
-User default currency
+The selected currency will be used to display all amounts across the entire app
+The app should remember the user’s selected currency for future sessions.
+
 Backend work:
 
-ExchangeRate API integration
-Currency rate cache
-Conversion service
-Report conversion logic
+Store user’s selected currency in user profile/settings
+
 Mobile work:
 
-Currency selector
-Converted amount display
-Multi-currency report labels
+Currency selector screen/field
+Save selected currency
+Load saved currency when the app opens
+Display all amounts using the selected currency symbol/code across the app
+
 Minimum success condition:
 
-User can enter transactions in different currencies and still see unified reports.
+User can select a currency once, and the whole app displays all amounts in that currency every time they use the app.
 2. Notifications
 
 Build:
@@ -484,7 +476,7 @@ Build:
 Bill reminders
 Budget overspending alerts
 Goal milestone alerts
-Recurring transaction reminders
+Recurring transaction reminders (1 day before and when it is recorded evrytime)
 Anomaly alerts
 Mobile work:
 
@@ -499,47 +491,12 @@ Alert generation
 Minimum success condition:
 
 User receives useful financial reminders and alerts.
-3. Better Offline Sync
-
-Improve beyond simple sync.
+3. Security Hardening
 
 Build:
-
-Sync queue
-Conflict detection
-Latest timestamp wins
-Failed sync retry
-Deleted item sync
-Receipt sync
-Offline edit sync
-Important fields:
-
-local_id
-server_id
-sync_status
-created_at
-updated_at
-deleted_at
-last_synced_at
-Minimum success condition:
-
-Offline changes are reliable and predictable.
-4. Security Hardening
-
-Build:
-
-Strong password hashing
-JWT expiry and refresh token flow
-Encrypted sensitive local storage
-HTTPS
-Role-based access for admin
 Input validation
 Rate limiting
-Secure file upload handling
-Minimum success condition:
-
-Auth and financial data handling are defensible for a university project demo.
-5. UI/UX Polish
+4. UI/UX Polish
 
 Improve:
 

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { recurringApi } from '../lib/recurringApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -13,7 +14,8 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'Recurring'>;
 
 export const RecurringScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [rules, setRules] = useState<RecurringRule[]>([]);
   const [error, setError] = useState('');
   const [syncMessage, setSyncMessage] = useState('');
@@ -76,7 +78,7 @@ export const RecurringScreen = ({ navigation }: Props) => {
                 <CategoryIcon icon={rule.categoryIcon} color={rule.categoryColor} />
                 <Text style={{ color: theme.colors.text.primary }}>{rule.categoryName}</Text>
               </View>
-              <Text style={{ color: theme.colors.text.secondary }}>{rule.amount.toFixed(2)}</Text>
+              <Text style={{ color: theme.colors.text.secondary }}>{formatMoney(rule.amount, preferredCurrency)}</Text>
             </View>
             <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
               {rule.frequency === 'custom' ? `Every ${rule.customDays} day(s)` : rule.frequency}
@@ -105,4 +107,3 @@ export const RecurringScreen = ({ navigation }: Props) => {
     </Screen>
   );
 };
-

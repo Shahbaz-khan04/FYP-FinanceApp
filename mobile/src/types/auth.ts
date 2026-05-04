@@ -1,6 +1,7 @@
 export type UserSettings = {
   notificationsEnabled: boolean;
   theme: 'dark' | 'light';
+  currency: string;
 };
 
 export type AuthUser = {

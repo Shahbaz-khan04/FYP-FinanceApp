@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { getPreferredCurrency } from '../lib/currency';
 import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -14,14 +15,14 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'TransactionDetail'>;
 
 export const TransactionDetailScreen = ({ route, navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const netInfo = useNetInfo();
   const isOnline = Boolean(netInfo.isConnected);
   const { transaction } = route.params;
   const [amount, setAmount] = useState(String(transaction.amount));
   const [type, setType] = useState<TransactionType>(transaction.type);
   const [date, setDate] = useState(transaction.date);
-  const [currency, setCurrency] = useState(transaction.currency);
   const [paymentMethod, setPaymentMethod] = useState(transaction.paymentMethod);
   const [notes, setNotes] = useState(transaction.notes ?? '');
   const [tags, setTags] = useState(transaction.tags.join(', '));
@@ -47,7 +48,7 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
         type,
         categoryId: categoryId || null,
         date,
-        currency: currency.toUpperCase(),
+        currency: preferredCurrency,
         paymentMethod,
         notes: notes || null,
         tags: tags
@@ -141,22 +142,9 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
             backgroundColor: theme.colors.background.surface,
           }}
         />
-        <TextInput
-          value={currency}
-          onChangeText={setCurrency}
-          placeholder="Currency"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
+        <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>
+          Currency: {preferredCurrency}
+        </Text>
         <TextInput
           value={paymentMethod}
           onChangeText={setPaymentMethod}

@@ -61,7 +61,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const normalizeSettings = (value: unknown): UserSettings => {
   if (!value || typeof value !== 'object') {
-    return { notificationsEnabled: true, theme: 'dark' };
+    return { notificationsEnabled: true, theme: 'dark', currency: 'PKR' };
   }
 
   const raw = value as Partial<UserSettings>;
@@ -69,6 +69,7 @@ const normalizeSettings = (value: unknown): UserSettings => {
     notificationsEnabled:
       typeof raw.notificationsEnabled === 'boolean' ? raw.notificationsEnabled : true,
     theme: raw.theme === 'light' ? 'light' : 'dark',
+    currency: typeof raw.currency === 'string' && raw.currency.length === 3 ? raw.currency.toUpperCase() : 'PKR',
   };
 };
 

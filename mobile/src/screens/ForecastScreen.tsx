@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { forecastApi } from '../lib/forecastApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -12,7 +13,8 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'Forecast'>;
 
 export const ForecastScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [summary, setSummary] = useState<ForecastSummary | null>(null);
   const [error, setError] = useState('');
 
@@ -46,13 +48,13 @@ export const ForecastScreen = ({ navigation }: Props) => {
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Expected Income</Text>
             <Text style={{ ...theme.typography.title2, color: theme.colors.state.success }}>
-              {summary ? summary.expectedIncome.toFixed(2) : '0.00'}
+              {summary ? formatMoney(summary.expectedIncome, preferredCurrency) : formatMoney(0, preferredCurrency)}
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Expected Expenses</Text>
             <Text style={{ ...theme.typography.title2, color: theme.colors.state.danger }}>
-              {summary ? summary.expectedExpenses.toFixed(2) : '0.00'}
+              {summary ? formatMoney(summary.expectedExpenses, preferredCurrency) : formatMoney(0, preferredCurrency)}
             </Text>
           </View>
         </View>
@@ -60,19 +62,19 @@ export const ForecastScreen = ({ navigation }: Props) => {
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Cash Flow Summary</Text>
           <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
-            Current balance: {summary?.currentBalance.toFixed(2) ?? '0.00'}
+            Current balance: {formatMoney(summary?.currentBalance ?? 0, preferredCurrency)}
           </Text>
           <Text style={{ color: theme.colors.text.secondary }}>
-            Expected net cash flow: {summary?.expectedNetCashFlow.toFixed(2) ?? '0.00'}
+            Expected net cash flow: {formatMoney(summary?.expectedNetCashFlow ?? 0, preferredCurrency)}
           </Text>
           <Text style={{ color: theme.colors.text.secondary }}>
-            Forecast next month balance: {summary?.forecastNextMonthBalance.toFixed(2) ?? '0.00'}
+            Forecast next month balance: {formatMoney(summary?.forecastNextMonthBalance ?? 0, preferredCurrency)}
           </Text>
           <Text style={{ color: theme.colors.text.secondary }}>
-            3-month avg income/expense: {summary?.averageIncomeLast3Months.toFixed(2) ?? '0.00'} / {summary?.averageExpensesLast3Months.toFixed(2) ?? '0.00'}
+            3-month avg income/expense: {formatMoney(summary?.averageIncomeLast3Months ?? 0, preferredCurrency)} / {formatMoney(summary?.averageExpensesLast3Months ?? 0, preferredCurrency)}
           </Text>
           <Text style={{ color: theme.colors.text.secondary }}>
-            Recurring projection: {summary?.projectedRecurringNextMonth.toFixed(2) ?? '0.00'}
+            Recurring projection: {formatMoney(summary?.projectedRecurringNextMonth ?? 0, preferredCurrency)}
           </Text>
         </View>
 
@@ -109,4 +111,3 @@ export const ForecastScreen = ({ navigation }: Props) => {
     </Screen>
   );
 };
-

@@ -6,6 +6,7 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
 import { alertsApi } from '../lib/alertsApi';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -17,7 +18,8 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>;
 
 export const TransactionsScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const netInfo = useNetInfo();
   const isOnline = Boolean(netInfo.isConnected);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
@@ -97,7 +99,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
         Transactions
       </Text>
       <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
-        Net total: {total.toFixed(2)}
+        Net total: {formatMoney(total, preferredCurrency)}
       </Text>
       <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
         {isOnline ? 'Online' : 'Offline'} • Sync: {syncStatus}
@@ -246,7 +248,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
               </Text>
             ) : null}
             <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>
-              {item.currency} {item.amount.toFixed(2)} • {item.type}
+              {formatMoney(item.amount, preferredCurrency)} • {item.type}
             </Text>
             <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
               {item.categoryName ?? 'Uncategorized'} • {item.date}

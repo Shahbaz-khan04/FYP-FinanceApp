@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { dashboardApi } from '../lib/dashboardApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -20,7 +21,8 @@ const shiftMonth = (month: string, delta: number) => {
 };
 
 export const DashboardScreen = ({ navigation }: Props) => {
-  const { token, logout } = useAuth();
+  const { token, logout, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [month, setMonth] = useState(currentMonth());
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [monthlyTotals, setMonthlyTotals] = useState<DashboardMonthTotal[]>([]);
@@ -72,19 +74,19 @@ export const DashboardScreen = ({ navigation }: Props) => {
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Income</Text>
             <Text style={{ ...theme.typography.title2, color: theme.colors.state.success }}>
-              {summary ? summary.income.toFixed(2) : '0.00'}
+              {summary ? formatMoney(summary.income, preferredCurrency) : formatMoney(0, preferredCurrency)}
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Expenses</Text>
             <Text style={{ ...theme.typography.title2, color: theme.colors.state.danger }}>
-              {summary ? summary.expenses.toFixed(2) : '0.00'}
+              {summary ? formatMoney(summary.expenses, preferredCurrency) : formatMoney(0, preferredCurrency)}
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>Balance</Text>
             <Text style={{ ...theme.typography.title2, color: theme.colors.text.primary }}>
-              {summary ? summary.balance.toFixed(2) : '0.00'}
+              {summary ? formatMoney(summary.balance, preferredCurrency) : formatMoney(0, preferredCurrency)}
             </Text>
           </View>
         </View>
@@ -98,7 +100,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
                   <CategoryIcon icon={item.icon} color={item.color} />
                   <Text style={{ color: theme.colors.text.secondary }}>{item.name}</Text>
                 </View>
-                <Text style={{ color: theme.colors.text.primary }}>{item.total.toFixed(2)}</Text>
+                <Text style={{ color: theme.colors.text.primary }}>{formatMoney(item.total, preferredCurrency)}</Text>
               </View>
               <View style={{ height: 8, backgroundColor: theme.colors.background.surfaceRaised, borderRadius: theme.radius.pill, marginTop: theme.spacing[1] }}>
                 <View
@@ -119,7 +121,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
           {(summary?.recentTransactions ?? []).map((tx) => (
             <View key={tx.id} style={{ marginTop: theme.spacing[2], borderBottomWidth: 1, borderBottomColor: theme.colors.border.subtle, paddingBottom: theme.spacing[2] }}>
               <Text style={{ color: theme.colors.text.primary }}>
-                {tx.currency} {tx.amount.toFixed(2)} • {tx.type}
+                {formatMoney(tx.amount, preferredCurrency)} • {tx.type}
               </Text>
               <Text style={{ color: theme.colors.text.secondary }}>
                 {tx.categoryName} • {tx.date}
@@ -132,10 +134,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
             <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Budget Usage</Text>
             <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
-              Spent: {summary?.budgetUsage.spent.toFixed(2) ?? '0.00'}
+              Spent: {formatMoney(summary?.budgetUsage.spent ?? 0, preferredCurrency)}
             </Text>
             <Text style={{ color: theme.colors.text.secondary }}>
-              Planned: {summary?.budgetUsage.planned.toFixed(2) ?? '0.00'}
+              Planned: {formatMoney(summary?.budgetUsage.planned ?? 0, preferredCurrency)}
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>

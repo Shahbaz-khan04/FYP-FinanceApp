@@ -789,3 +789,29 @@ Expected: high-priority cards appear first.
 No-signal state
 Use sparse/insufficient data.
 Expected: clean “No strong recommendation signals” state.
+
+
+Test Cases (Currency Selector)
+Open Settings, choose a currency (e.g. USD), tap Save settings.
+Expected: success message and no error.
+
+Navigate to Dashboard/Transactions/Budgets/Goals/Reports/Forecast.
+Expected: amounts display in selected currency format (e.g. $, €, PKR format via Intl).
+
+Create a new transaction after selecting currency.
+Expected: transaction is saved using preferred currency (without manual currency entry).
+
+Edit an existing transaction and save.
+Expected: update saves with preferred currency and displays in preferred currency.
+
+Receipt flow: scan → confirm → create transaction.
+Expected: receipt-created transaction uses preferred currency.
+
+Logout, then login again.
+Expected: selected currency remains (loaded from profile settings).
+
+Reload web preview / restart app.
+Expected: selected currency persists and amounts still display using that currency.
+
+Switch currency again (e.g. USD → PKR) and revisit all screens.
+Expected: all displayed amounts reflect new selected currency immediately after save.

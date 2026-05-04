@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { reportApi } from '../lib/reportApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -28,7 +29,8 @@ const defaultRange = () => {
 const monthOf = (date: string) => date.slice(0, 7);
 
 export const ReportsScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [{ startDate, endDate }, setRange] = useState(defaultRange());
   const [granularity, setGranularity] = useState<'daily' | 'weekly'>('weekly');
   const [incomeExpenses, setIncomeExpenses] = useState<IncomeExpensePoint[]>([]);
@@ -170,7 +172,7 @@ export const ReportsScreen = ({ navigation }: Props) => {
                   <CategoryIcon icon={item.icon} color={item.color} />
                   <Text style={{ color: theme.colors.text.secondary }}>{item.category}</Text>
                 </View>
-                <Text style={{ color: theme.colors.text.primary }}>{item.amount.toFixed(2)}</Text>
+                <Text style={{ color: theme.colors.text.primary }}>{formatMoney(item.amount, preferredCurrency)}</Text>
               </View>
               <View style={{ height: 8, backgroundColor: theme.colors.background.surfaceRaised, borderRadius: theme.radius.pill, marginTop: 4 }}>
                 <View style={{ width: `${item.percent}%`, height: 8, backgroundColor: item.color, borderRadius: theme.radius.pill }} />
@@ -185,7 +187,7 @@ export const ReportsScreen = ({ navigation }: Props) => {
             <View key={item.period} style={{ marginTop: theme.spacing[2] }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ color: theme.colors.text.secondary }}>{item.period}</Text>
-                <Text style={{ color: theme.colors.text.primary }}>{item.amount.toFixed(2)}</Text>
+                <Text style={{ color: theme.colors.text.primary }}>{formatMoney(item.amount, preferredCurrency)}</Text>
               </View>
               <View style={{ height: 8, backgroundColor: theme.colors.background.surfaceRaised, borderRadius: theme.radius.pill, marginTop: 4 }}>
                 <View style={{ width: `${(item.amount / maxTrend) * 100}%`, height: 8, backgroundColor: theme.colors.brand.secondary, borderRadius: theme.radius.pill }} />
@@ -226,7 +228,7 @@ export const ReportsScreen = ({ navigation }: Props) => {
                 </Text>
               </View>
               <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.muted }}>
-                Saved {goal.savedAmount.toFixed(2)} / {goal.targetAmount.toFixed(2)}
+                Saved {formatMoney(goal.savedAmount, preferredCurrency)} / {formatMoney(goal.targetAmount, preferredCurrency)}
               </Text>
               <View style={{ height: 8, backgroundColor: theme.colors.background.surfaceRaised, borderRadius: theme.radius.pill, marginTop: 4 }}>
                 <View style={{ width: `${goal.progressPercent}%`, height: 8, backgroundColor: goal.isCompleted ? theme.colors.state.success : theme.colors.brand.primary, borderRadius: theme.radius.pill }} />
@@ -241,4 +243,3 @@ export const ReportsScreen = ({ navigation }: Props) => {
     </Screen>
   );
 };
-

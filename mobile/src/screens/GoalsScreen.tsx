@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { goalApi } from '../lib/goalApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -12,7 +13,8 @@ import { ActionButton, Screen } from './common';
 type Props = NativeStackScreenProps<RootStackParamList, 'Goals'>;
 
 export const GoalsScreen = ({ navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [error, setError] = useState('');
 
@@ -58,10 +60,10 @@ export const GoalsScreen = ({ navigation }: Props) => {
               </Text>
             </View>
             <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
-              Saved {goal.savedAmount.toFixed(2)} / {goal.targetAmount.toFixed(2)}
+              Saved {formatMoney(goal.savedAmount, preferredCurrency)} / {formatMoney(goal.targetAmount, preferredCurrency)}
             </Text>
             <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.muted }}>
-              Remaining {goal.remainingAmount.toFixed(2)} • Deadline {goal.deadline}
+              Remaining {formatMoney(goal.remainingAmount, preferredCurrency)} • Deadline {goal.deadline}
             </Text>
             <View style={{ height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.colors.background.surfaceRaised, marginTop: theme.spacing[2] }}>
               <View
@@ -79,4 +81,3 @@ export const GoalsScreen = ({ navigation }: Props) => {
     </Screen>
   );
 };
-

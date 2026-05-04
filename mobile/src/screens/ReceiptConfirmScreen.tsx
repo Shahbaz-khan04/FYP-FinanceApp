@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { getPreferredCurrency } from '../lib/currency';
 import { receiptApi } from '../lib/receiptApi';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -15,12 +16,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ReceiptConfirm'>;
 const today = () => new Date().toISOString().slice(0, 10);
 
 export const ReceiptConfirmScreen = ({ route, navigation }: Props) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const preferredCurrency = getPreferredCurrency(user?.settings);
   const { receipt } = route.params;
   const [amount, setAmount] = useState(receipt.extractedAmount ? String(receipt.extractedAmount) : '');
   const [type, setType] = useState<TransactionType>('expense');
   const [date, setDate] = useState(receipt.extractedDate ?? today());
-  const [currency, setCurrency] = useState('PKR');
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [notes, setNotes] = useState(receipt.extractedMerchant ?? '');
   const [tags, setTags] = useState('receipt');
@@ -49,7 +50,7 @@ export const ReceiptConfirmScreen = ({ route, navigation }: Props) => {
         type,
         categoryId: categoryId || null,
         date,
-        currency: currency.toUpperCase(),
+        currency: preferredCurrency,
         paymentMethod,
         notes: notes || null,
         tags: tags
@@ -129,22 +130,9 @@ export const ReceiptConfirmScreen = ({ route, navigation }: Props) => {
             backgroundColor: theme.colors.background.surface,
           }}
         />
-        <TextInput
-          value={currency}
-          onChangeText={setCurrency}
-          placeholder="Currency"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
+        <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>
+          Currency: {preferredCurrency}
+        </Text>
         <TextInput
           value={paymentMethod}
           onChangeText={setPaymentMethod}
