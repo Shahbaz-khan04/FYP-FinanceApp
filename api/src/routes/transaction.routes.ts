@@ -27,6 +27,28 @@ const listTransactionQuerySchema = z.object({
   search: z.string().max(100).optional(),
 });
 
+const syncOperationSchema = z.object({
+  id: z.string().uuid(),
+  action: z.enum(['create', 'update', 'delete']),
+  client_updated_at: z.string().datetime(),
+  payload: z
+    .object({
+      amount: z.number().positive(),
+      type: transactionTypeSchema,
+      category_id: z.string().uuid().nullable(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      currency: z.string().length(3),
+      payment_method: z.string().min(2).max(50),
+      notes: z.string().max(500).nullable(),
+      tags: z.array(z.string().min(1).max(30)).max(10),
+    })
+    .optional(),
+});
+
+const syncSchema = z.object({
+  operations: z.array(syncOperationSchema).max(200),
+});
+
 export const transactionRouter = Router();
 transactionRouter.use(authMiddleware);
 
@@ -101,3 +123,15 @@ transactionRouter.delete('/:transactionId', async (req, res, next) => {
   }
 });
 
+transactionRouter.post('/sync', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+
+    const payload = syncSchema.parse(req.body);
+    const result = await transactionService.syncTransactions(userId, payload.operations);
+    res.json({ data: result, error: null });
+  } catch (error) {
+    next(error);
+  }
+});

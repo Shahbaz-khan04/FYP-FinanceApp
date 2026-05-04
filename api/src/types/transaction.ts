@@ -24,3 +24,19 @@ export type Transaction = {
   created_at: string;
   updated_at: string;
 };
+
+export type SyncTransactionOperation = {
+  id: string;
+  action: 'create' | 'update' | 'delete';
+  client_updated_at: string;
+  payload?: {
+    amount: number;
+    type: 'income' | 'expense';
+    category_id: string | null;
+    currency: string;
+    payment_method: string;
+    date: string;
+    notes: string | null;
+    tags: string[];
+  };
+};

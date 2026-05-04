@@ -297,17 +297,7 @@ User can add transactions offline and they upload later.
 Phase 2: Smart Features
 This phase adds intelligence on top of the working finance tracker.
 
-1. AI/ML Expense Categorization
-
-Start simple before using complex ML.
-
-Step 1: Rule-based categorization:
-
-If note contains “Uber”, category = Transport
-If note contains “rent”, category = Rent
-If note contains “Netflix”, category = Entertainment
-
-2. OCR Receipt Scanning
+1. OCR Receipt Scanning
 
 Use OCR Space API or another OCR provider.
 
@@ -341,7 +331,7 @@ Receipt storage
 Minimum success condition:
 
 User can scan a receipt and create a transaction faster than manual entry.
-3. Recurring Transactions
+2. Recurring Transactions
 
 Build:
 
@@ -371,7 +361,7 @@ Reminder generation
 Minimum success condition:
 
 Repeated financial activity does not need to be entered manually every time.
-4. Forecasting
+3. Forecasting
 
 Start with simple forecasting.
 
@@ -404,7 +394,7 @@ Historical aggregation
 Minimum success condition:
 
 User can see likely future balance and spending risk.
-5. Anomaly Detection
+4. Anomaly Detection
 
 Build:
 
@@ -430,7 +420,7 @@ Alert read/dismiss APIs
 Minimum success condition:
 
 User is notified when spending looks unusual.
-6. Budget Recommendations
+5. Budget Recommendations
 
 Build:
 

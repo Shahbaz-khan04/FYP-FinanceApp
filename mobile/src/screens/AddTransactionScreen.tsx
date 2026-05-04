@@ -1,8 +1,10 @@
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -15,6 +17,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export const AddTransactionScreen = ({ navigation }: Props) => {
   const { token } = useAuth();
+  const netInfo = useNetInfo();
+  const isOnline = Boolean(netInfo.isConnected);
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('expense');
   const [date, setDate] = useState(today());
@@ -40,7 +44,7 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
     if (!token) return;
     try {
       setError('');
-      await transactionsApi.createTransaction(token, {
+      const payload = {
         amount: Number(amount),
         type,
         categoryId: categoryId || null,
@@ -52,7 +56,12 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
           .split(',')
           .map((tag) => tag.trim())
           .filter(Boolean),
-      });
+      };
+      const categoryName = categories.find((c) => c.id === payload.categoryId)?.name ?? null;
+      await offlineTransactions.createLocal(payload, categoryName);
+      if (isOnline) {
+        await offlineTransactions.sync(token);
+      }
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save transaction');

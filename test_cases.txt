@@ -509,3 +509,69 @@ Choose a date range with no transactions.
 Expected:
 sections render with empty rows/no crash
 screen remains usable
+
+
+1) Baseline online sync state
+Start app online.
+Go to Transactions.
+Expected:
+status line shows Online
+sync state shows idle/synced
+2) Add transaction offline
+Go online first, open Add Transaction once (to ensure categories cached).
+Turn internet off.
+Add a transaction and save.
+Go back to list.
+Expected:
+transaction appears in list immediately
+status line shows Offline
+no crash/API error
+3) Edit transaction offline
+While still offline, open a transaction.
+Edit amount/notes and save.
+Expected:
+list reflects changes immediately (local cache)
+4) Delete transaction offline
+While offline, open a transaction.
+Delete it.
+Expected:
+item removed immediately from local list
+5) Auto-sync on reconnect
+Perform a few offline operations (create/update/delete).
+Re-enable internet.
+Open Transactions screen.
+Expected:
+sync status transitions to syncing then synced
+server data matches local offline changes
+6) Manual sync button
+While online, tap Sync Now.
+Expected:
+sync status updates (syncing -> synced)
+no duplicate transactions introduced
+7) Queue conflict (latest-update-wins)
+Modify same transaction from two clients/devices with different timestamps (or simulate by offline edit then online server edit before sync).
+Reconnect and sync offline client.
+Expected:
+newer timestamp version is kept
+older op appears as skipped in backend sync result
+8) App restart with pending queue
+Create offline transaction(s).
+Close app completely and reopen while still offline.
+Expected:
+offline-created items still visible (local cache persisted)
+Reconnect internet.
+Expected:
+pending queue syncs and data reaches server
+9) Category availability offline
+Go online once and load categories.
+Go offline.
+Open Add/Edit transaction.
+Expected:
+category options are still available from cached categories
+10) Minimum success condition check
+Turn offline.
+Add one new transaction.
+Reconnect online.
+Confirm item exists on server-backed list after sync.
+Expected:
+“user can add transactions offline and they upload later” is satisfied.

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { supabase } from '../db/supabase.js';
-import type { Category, Transaction } from '../types/transaction.js';
+import type { Category, SyncTransactionOperation, Transaction } from '../types/transaction.js';
 import { HttpError } from '../utils/httpError.js';
 
 const requireDb = () => {
@@ -165,14 +165,16 @@ export const transactionService = {
   async createTransaction(
     userId: string,
     payload: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
+    options?: { id?: string; updatedAt?: string },
   ) {
     const db = requireDb();
-    const now = new Date().toISOString();
+    const now = options?.updatedAt ?? new Date().toISOString();
+    const id = options?.id ?? randomUUID();
 
     const { data, error } = await db
       .from('transactions')
       .insert({
-        id: randomUUID(),
+        id,
         user_id: userId,
         amount: payload.amount,
         type: payload.type,
@@ -234,5 +236,79 @@ export const transactionService = {
     if (error) {
       throw new HttpError(500, 'TRANSACTION_DELETE_FAILED', 'Could not delete transaction');
     }
+  },
+
+  async syncTransactions(userId: string, operations: SyncTransactionOperation[]) {
+    const db = requireDb();
+    const applied: string[] = [];
+    const skipped: string[] = [];
+
+    for (const operation of operations) {
+      const { data: existing, error: readError } = await db
+        .from('transactions')
+        .select('*')
+        .eq('id', operation.id)
+        .eq('user_id', userId)
+        .maybeSingle<Transaction>();
+
+      if (readError) {
+        throw new HttpError(500, 'SYNC_READ_FAILED', 'Could not process sync operation');
+      }
+
+      const incomingTs = new Date(operation.client_updated_at).getTime();
+      const serverTs = existing ? new Date(existing.updated_at).getTime() : 0;
+      const incomingIsLatest = !existing || incomingTs >= serverTs;
+
+      if (!incomingIsLatest) {
+        skipped.push(operation.id);
+        continue;
+      }
+
+      if (operation.action === 'delete') {
+        if (existing) {
+          await this.deleteTransaction(userId, operation.id);
+        }
+        applied.push(operation.id);
+        continue;
+      }
+
+      if (!operation.payload) {
+        skipped.push(operation.id);
+        continue;
+      }
+
+      if (!existing) {
+        await this.createTransaction(
+          userId,
+          {
+            amount: operation.payload.amount,
+            type: operation.payload.type,
+            category_id: operation.payload.category_id,
+            currency: operation.payload.currency,
+            payment_method: operation.payload.payment_method,
+            date: operation.payload.date,
+            notes: operation.payload.notes,
+            tags: operation.payload.tags ?? [],
+          },
+          { id: operation.id, updatedAt: operation.client_updated_at },
+        );
+        applied.push(operation.id);
+        continue;
+      }
+
+      await this.updateTransaction(userId, operation.id, {
+        amount: operation.payload.amount,
+        type: operation.payload.type,
+        category_id: operation.payload.category_id,
+        currency: operation.payload.currency,
+        payment_method: operation.payload.payment_method,
+        date: operation.payload.date,
+        notes: operation.payload.notes,
+        tags: operation.payload.tags ?? [],
+      });
+      applied.push(operation.id);
+    }
+
+    return { applied, skipped };
   },
 };

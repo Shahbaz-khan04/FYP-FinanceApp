@@ -1,8 +1,10 @@
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -13,6 +15,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'TransactionDetail'>;
 
 export const TransactionDetailScreen = ({ route, navigation }: Props) => {
   const { token } = useAuth();
+  const netInfo = useNetInfo();
+  const isOnline = Boolean(netInfo.isConnected);
   const { transaction } = route.params;
   const [amount, setAmount] = useState(String(transaction.amount));
   const [type, setType] = useState<TransactionType>(transaction.type);
@@ -38,7 +42,7 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
     if (!token) return;
     try {
       setError('');
-      await transactionsApi.updateTransaction(token, transaction.id, {
+      const payload = {
         amount: Number(amount),
         type,
         categoryId: categoryId || null,
@@ -50,7 +54,12 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
           .split(',')
           .map((tag) => tag.trim())
           .filter(Boolean),
-      });
+      };
+      const categoryName = categories.find((c) => c.id === payload.categoryId)?.name ?? null;
+      await offlineTransactions.updateLocal(transaction.id, payload, categoryName);
+      if (isOnline) {
+        await offlineTransactions.sync(token);
+      }
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update');
@@ -61,7 +70,10 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
     if (!token) return;
     try {
       setError('');
-      await transactionsApi.deleteTransaction(token, transaction.id);
+      await offlineTransactions.deleteLocal(transaction.id);
+      if (isOnline) {
+        await offlineTransactions.sync(token);
+      }
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');

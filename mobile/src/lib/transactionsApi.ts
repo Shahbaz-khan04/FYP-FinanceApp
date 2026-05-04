@@ -1,14 +1,29 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from './apiClient';
 import type { Category, TransactionItem, TransactionPayload, TransactionType } from '../types/transaction';
+
+const CATEGORY_CACHE_KEY = 'category_cache_v1';
 
 export const transactionsApi = {
   async listCategories(token: string, type?: TransactionType) {
     const query = type ? `?type=${type}` : '';
-    const response = await apiClient<{ data: Category[]; error: null }>(`/categories${query}`, {
-      method: 'GET',
-      token,
-    });
-    return response.data;
+    try {
+      const response = await apiClient<{ data: Category[]; error: null }>(`/categories${query}`, {
+        method: 'GET',
+        token,
+      });
+      const all = await apiClient<{ data: Category[]; error: null }>('/categories', {
+        method: 'GET',
+        token,
+      });
+      await AsyncStorage.setItem(CATEGORY_CACHE_KEY, JSON.stringify(all.data));
+      return response.data;
+    } catch (error) {
+      const cachedRaw = await AsyncStorage.getItem(CATEGORY_CACHE_KEY);
+      const cached = cachedRaw ? (JSON.parse(cachedRaw) as Category[]) : [];
+      if (!cached.length) throw error;
+      return type ? cached.filter((c) => c.type === type) : cached;
+    }
   },
 
   async createCategory(
@@ -81,5 +96,34 @@ export const transactionsApi = {
       method: 'DELETE',
       token,
     });
+  },
+
+  async syncTransactions(
+    token: string,
+    operations: Array<{
+      id: string;
+      action: 'create' | 'update' | 'delete';
+      client_updated_at: string;
+      payload?: {
+        amount: number;
+        type: TransactionType;
+        category_id: string | null;
+        currency: string;
+        payment_method: string;
+        date: string;
+        notes: string | null;
+        tags: string[];
+      };
+    }>,
+  ) {
+    const response = await apiClient<{ data: { applied: string[]; skipped: string[] }; error: null }>(
+      '/transactions/sync',
+      {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ operations }),
+      },
+    );
+    return response.data;
   },
 };

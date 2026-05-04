@@ -1,9 +1,11 @@
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
+import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
@@ -14,6 +16,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>;
 
 export const TransactionsScreen = ({ navigation }: Props) => {
   const { token } = useAuth();
+  const netInfo = useNetInfo();
+  const isOnline = Boolean(netInfo.isConnected);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [type, setType] = useState<TransactionType | ''>('');
@@ -22,6 +26,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'offline'>('idle');
 
   const total = useMemo(
     () => transactions.reduce((sum, item) => sum + (item.type === 'income' ? item.amount : -item.amount), 0),
@@ -32,8 +37,9 @@ export const TransactionsScreen = ({ navigation }: Props) => {
     if (!token) return;
     try {
       setError('');
+      setSyncStatus(isOnline ? 'idle' : 'offline');
       const [tx, cats] = await Promise.all([
-        transactionsApi.listTransactions(token, {
+        offlineTransactions.loadTransactions(token, isOnline, {
           ...(type ? { type } : {}),
           ...(categoryId ? { categoryId } : {}),
           ...(search.trim() ? { search: search.trim() } : {}),
@@ -47,13 +53,34 @@ export const TransactionsScreen = ({ navigation }: Props) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }
-  }, [categoryId, endDate, search, startDate, token, type]);
+  }, [categoryId, endDate, isOnline, search, startDate, token, type]);
+
+  const runSync = useCallback(async () => {
+    if (!token || !isOnline) return;
+    try {
+      setSyncStatus('syncing');
+      await offlineTransactions.sync(token);
+      setSyncStatus('synced');
+      await load();
+      setTimeout(() => setSyncStatus('idle'), 1200);
+    } catch {
+      setSyncStatus('idle');
+    }
+  }, [isOnline, load, token]);
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [load]),
   );
+
+  useEffect(() => {
+    if (isOnline) {
+      runSync();
+    } else {
+      setSyncStatus('offline');
+    }
+  }, [isOnline, runSync]);
 
   return (
     <Screen>
@@ -62,6 +89,9 @@ export const TransactionsScreen = ({ navigation }: Props) => {
       </Text>
       <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
         Net total: {total.toFixed(2)}
+      </Text>
+      <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+        {isOnline ? 'Online' : 'Offline'} • Sync: {syncStatus}
       </Text>
 
       <TextInput
@@ -181,6 +211,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
 
       <ActionButton label="Apply filters" onPress={load} />
       <ActionButton label="Add transaction" onPress={() => navigation.navigate('AddTransaction')} variant="secondary" />
+      {isOnline ? <ActionButton label="Sync Now" onPress={runSync} variant="secondary" /> : null}
 
       {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
 
