@@ -163,6 +163,7 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
         {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
         <ActionButton label="Transactions" onPress={() => navigation.navigate('Transactions')} />
+        <ActionButton label="Recurring" onPress={() => navigation.navigate('Recurring')} />
         <ActionButton label="Reports" onPress={() => navigation.navigate('Reports')} />
         <ActionButton label="Budgets" onPress={() => navigation.navigate('Budgets')} />
         <ActionButton label="Goals" onPress={() => navigation.navigate('Goals')} />

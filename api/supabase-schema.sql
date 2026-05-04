@@ -85,3 +85,21 @@ create table if not exists public.goals (
 
 create index if not exists idx_goals_user_id on public.goals(user_id);
 create index if not exists idx_goals_user_deadline on public.goals(user_id, deadline);
+
+create table if not exists public.recurring_transactions (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  amount numeric(14,2) not null check (amount > 0),
+  category_id uuid not null references public.categories(id) on delete cascade,
+  frequency text not null check (frequency in ('weekly', 'monthly', 'custom')),
+  custom_days int null check (custom_days is null or custom_days > 0),
+  is_paused boolean not null default false,
+  start_date date not null,
+  next_run_date date not null,
+  last_run_date date null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_recurring_user_id on public.recurring_transactions(user_id);
+create index if not exists idx_recurring_next_run on public.recurring_transactions(next_run_date);

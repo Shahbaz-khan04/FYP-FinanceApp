@@ -334,30 +334,18 @@ User can scan a receipt and create a transaction faster than manual entry.
 2. Recurring Transactions
 
 Build:
-
-Monthly rent
-Weekly income
-Subscription payments
-Utility bills
 Fields:
 
 Amount
 Category
-Frequency
-Start date
-End date
-Next due date
-Auto-create or reminder-only mode
+Frequency (weekly, montly, custom(no of days input))
 Mobile work:
 
-Recurring transaction setup
-Upcoming payments screen
 Edit/pause recurring item
 Backend work:
 
 Recurring rules
 Scheduled job to create transactions
-Reminder generation
 Minimum success condition:
 
 Repeated financial activity does not need to be entered manually every time.

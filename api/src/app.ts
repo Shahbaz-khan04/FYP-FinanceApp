@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { reportRouter } from './routes/report.routes.js';
+import { recurringJobRouter, recurringRouter } from './routes/recurring.routes.js';
 import { transactionRouter } from './routes/transaction.routes.js';
 import { userRouter } from './routes/user.routes.js';
 
@@ -31,6 +32,8 @@ export const createApp = () => {
   app.use('/budgets', budgetRouter);
   app.use('/goals', goalRouter);
   app.use('/reports', reportRouter);
+  app.use('/recurring', recurringRouter);
+  app.use('/jobs/recurring', recurringJobRouter);
 
   app.use(errorHandler);
 

@@ -19,10 +19,13 @@ import { GoalsScreen } from '../screens/GoalsScreen';
 import { GoalEditorScreen } from '../screens/GoalEditorScreen';
 import { GoalDetailScreen } from '../screens/GoalDetailScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
+import { RecurringEditorScreen } from '../screens/RecurringEditorScreen';
+import { RecurringScreen } from '../screens/RecurringScreen';
 import { theme } from '../theme';
 import type { TransactionItem } from '../types/transaction';
 import type { BudgetItem } from '../types/budget';
 import type { GoalItem } from '../types/goal';
+import type { RecurringRule } from '../types/recurring';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -40,6 +43,8 @@ export type RootStackParamList = {
   GoalEditor: { goal?: GoalItem } | undefined;
   GoalDetail: { goal: GoalItem };
   Reports: undefined;
+  Recurring: undefined;
+  RecurringEditor: { rule?: RecurringRule } | undefined;
   AddTransaction: undefined;
   TransactionDetail: { transaction: TransactionItem };
 };
@@ -143,6 +148,16 @@ export const RootNavigator = () => {
               name="Reports"
               component={ReportsScreen}
               options={{ title: 'Reports' }}
+            />
+            <Stack.Screen
+              name="Recurring"
+              component={RecurringScreen}
+              options={{ title: 'Recurring' }}
+            />
+            <Stack.Screen
+              name="RecurringEditor"
+              component={RecurringEditorScreen}
+              options={{ title: 'Recurring Rule' }}
             />
             <Stack.Screen
               name="AddTransaction"

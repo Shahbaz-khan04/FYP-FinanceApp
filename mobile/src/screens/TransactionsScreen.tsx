@@ -211,6 +211,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
 
       <ActionButton label="Apply filters" onPress={load} />
       <ActionButton label="Add transaction" onPress={() => navigation.navigate('AddTransaction')} variant="secondary" />
+      <ActionButton label="Recurring Rules" onPress={() => navigation.navigate('Recurring')} variant="secondary" />
       {isOnline ? <ActionButton label="Sync Now" onPress={runSync} variant="secondary" /> : null}
 
       {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
