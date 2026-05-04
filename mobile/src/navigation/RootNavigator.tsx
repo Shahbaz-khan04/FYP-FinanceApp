@@ -19,6 +19,7 @@ import { GoalsScreen } from '../screens/GoalsScreen';
 import { GoalEditorScreen } from '../screens/GoalEditorScreen';
 import { GoalDetailScreen } from '../screens/GoalDetailScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
+import { ForecastScreen } from '../screens/ForecastScreen';
 import { RecurringEditorScreen } from '../screens/RecurringEditorScreen';
 import { RecurringScreen } from '../screens/RecurringScreen';
 import { theme } from '../theme';
@@ -43,6 +44,7 @@ export type RootStackParamList = {
   GoalEditor: { goal?: GoalItem } | undefined;
   GoalDetail: { goal: GoalItem };
   Reports: undefined;
+  Forecast: undefined;
   Recurring: undefined;
   RecurringEditor: { rule?: RecurringRule } | undefined;
   AddTransaction: undefined;
@@ -148,6 +150,11 @@ export const RootNavigator = () => {
               name="Reports"
               component={ReportsScreen}
               options={{ title: 'Reports' }}
+            />
+            <Stack.Screen
+              name="Forecast"
+              component={ForecastScreen}
+              options={{ title: 'Forecast' }}
             />
             <Stack.Screen
               name="Recurring"

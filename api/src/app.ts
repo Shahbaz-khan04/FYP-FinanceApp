@@ -8,6 +8,7 @@ import { budgetRouter } from './routes/budget.routes.js';
 import { categoryRouter } from './routes/category.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { forecastRouter } from './routes/forecast.routes.js';
 import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { reportRouter } from './routes/report.routes.js';
@@ -34,6 +35,7 @@ export const createApp = () => {
   app.use('/reports', reportRouter);
   app.use('/recurring', recurringRouter);
   app.use('/jobs/recurring', recurringJobRouter);
+  app.use('/forecast', forecastRouter);
 
   app.use(errorHandler);
 

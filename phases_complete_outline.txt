@@ -365,11 +365,6 @@ Average income from last 3 months
 Average expenses from last 3 months
 Known recurring transactions
 Current balance trend
-Advanced later:
-
-Time-series forecasting
-Category-specific forecasting
-Seasonal spending patterns
 Mobile work:
 
 Forecast chart

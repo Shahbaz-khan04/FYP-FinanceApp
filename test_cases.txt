@@ -577,3 +577,44 @@ Expected:
 “user can add transactions offline and they upload later” is satisfied.
 
 
+2) Create weekly recurring rule
+Open Dashboard -> Recurring.
+Tap Create Recurring Rule.
+Set amount/category/frequency=weekly.
+Save.
+Expected: rule appears with next run date.
+3) Create monthly recurring rule
+Create another rule with monthly.
+Expected: listed separately with correct frequency label.
+4) Create custom-days recurring rule
+Create rule with custom.
+Enter customDays (e.g. 10).
+Save.
+Expected: list shows Every 10 day(s).
+5) Edit rule
+Open existing rule -> Edit.
+Change amount/category/frequency.
+Save.
+Expected: list reflects updates.
+6) Pause/resume
+Tap Pause on a rule.
+Expected: row indicates paused.
+Tap Resume.
+Expected: paused indicator disappears.
+7) Process due now (manual)
+Create a rule with start date today.
+In recurring list tap Run Due Now.
+Expected:
+success message with created count
+new transaction(s) appears in Transactions list
+transaction has recurring tag/metadata behavior
+8) Scheduled-job endpoint
+Call POST /jobs/recurring/process-due with header x-job-token: <token>.
+Expected:
+unauthorized if token missing/wrong
+due rules processed when token correct
+9) Minimum success condition check
+Create one recurring rule.
+Run due processing.
+Verify repeated transaction is auto-created without manual transaction entry.
+Expected: repeated activity is automated.
