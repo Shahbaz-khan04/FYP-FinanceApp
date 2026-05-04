@@ -18,6 +18,7 @@ import { BudgetEditorScreen } from '../screens/BudgetEditorScreen';
 import { GoalsScreen } from '../screens/GoalsScreen';
 import { GoalEditorScreen } from '../screens/GoalEditorScreen';
 import { GoalDetailScreen } from '../screens/GoalDetailScreen';
+import { ReportsScreen } from '../screens/ReportsScreen';
 import { theme } from '../theme';
 import type { TransactionItem } from '../types/transaction';
 import type { BudgetItem } from '../types/budget';
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   Goals: undefined;
   GoalEditor: { goal?: GoalItem } | undefined;
   GoalDetail: { goal: GoalItem };
+  Reports: undefined;
   AddTransaction: undefined;
   TransactionDetail: { transaction: TransactionItem };
 };
@@ -136,6 +138,11 @@ export const RootNavigator = () => {
               name="GoalDetail"
               component={GoalDetailScreen}
               options={{ title: 'Goal Detail' }}
+            />
+            <Stack.Screen
+              name="Reports"
+              component={ReportsScreen}
+              options={{ title: 'Reports' }}
             />
             <Stack.Screen
               name="AddTransaction"

@@ -340,3 +340,172 @@ Expected:
 
 
 Budget Usage card reflects real planned, spent, and remaining values.
+
+Test cases (step-by-step) for Goals
+1) Setup check
+Run updated SQL from supabase-schema.sql.
+Restart:
+
+bash
+
+
+
+npm run dev:api
+npm run dev:mobile
+
+
+
+Login and open Dashboard -> Goals.
+
+Expected: Goals screen opens without API errors.
+
+2) Create goal
+Tap Create Goal.
+Enter:
+
+Title: Emergency Fund
+
+Target: 100000
+
+Saved: 20000
+
+Deadline: valid date (YYYY-MM-DD)
+
+
+
+Save.
+
+Expected:
+
+
+Goal appears in list
+
+Progress around 20%
+
+Remaining around 80000
+
+
+3) Edit goal
+Open goal detail.
+Tap Edit Goal.
+Change saved amount from 20000 to 50000.
+Save.
+
+Expected:
+
+
+List/detail updates
+
+Progress updates to 50%
+
+Remaining updates correctly
+
+
+4) Mark complete
+Open an incomplete goal.
+Tap Mark Complete.
+
+Expected:
+
+
+Goal marked completed
+
+Completed styling appears in list
+
+Dashboard goal preview completed count increases
+
+
+5) Auto-complete by amount
+Edit/create goal with savedAmount >= targetAmount.
+Save.
+
+Expected:
+
+
+Goal becomes completed automatically
+
+Progress capped at 100%
+
+
+6) Delete goal
+Open goal detail.
+Tap Delete Goal.
+
+Expected:
+
+
+Goal removed from list
+
+Dashboard goal counts update
+
+
+7) Progress indicator rendering
+Create 2–3 goals with varied saved amounts.
+Open list.
+
+Expected:
+
+
+Each row shows progress bar and percent
+
+Values correspond to saved/target ratio
+
+
+8) Dashboard goal preview
+Return to Dashboard.
+Verify Goal Progress card.
+
+Expected:
+
+
+Completed: X/Y matches actual goals
+
+Rate matches completion percentage
+
+1) Open Reports screen
+Login.
+Go Dashboard -> Reports.
+Expected: Reports screen opens with date-range inputs and chart sections.
+2) Date range selector
+Set startDate and endDate.
+Tap Apply Range.
+Expected: all report sections refresh according to selected range.
+3) Monthly income vs expenses
+Add transactions across at least 2 months:
+income entries
+expense entries
+Open reports with matching date range.
+Expected:
+each month appears once
+income and expense bars reflect correct relative values
+4) Category-wise spending
+Add expenses in multiple categories.
+Open reports.
+Expected:
+categories are sorted by spend
+bars and percentages are shown
+category icon/color appears
+5) Daily/weekly trend toggle
+On Reports, switch to Daily and apply.
+Note periods.
+Switch to Weekly and apply.
+Expected:
+period labels change from dates to week keys
+values aggregate differently as expected
+6) Budget planned vs actual report
+Ensure budgets exist for current month and related expenses exist.
+In Reports, budget section should load for end-date month.
+Expected:
+planned vs actual bars per budget category
+percentUsed reflects actual/planned
+7) Goal progress report
+Create/update multiple goals with varied saved amounts.
+Open Reports.
+Expected:
+each goal shows saved/target progress
+completed goals show completion state and full progress
+8) Empty-state behavior
+Choose a date range with no transactions.
+Expected:
+sections render with empty rows/no crash
+screen remains usable

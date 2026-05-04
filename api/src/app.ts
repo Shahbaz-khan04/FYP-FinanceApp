@@ -10,6 +10,7 @@ import { dashboardRouter } from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { reportRouter } from './routes/report.routes.js';
 import { transactionRouter } from './routes/transaction.routes.js';
 import { userRouter } from './routes/user.routes.js';
 
@@ -29,6 +30,7 @@ export const createApp = () => {
   app.use('/dashboard', dashboardRouter);
   app.use('/budgets', budgetRouter);
   app.use('/goals', goalRouter);
+  app.use('/reports', reportRouter);
 
   app.use(errorHandler);
 
