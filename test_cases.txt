@@ -815,3 +815,41 @@ Expected: selected currency persists and amounts still display using that curren
 
 Switch currency again (e.g. USD → PKR) and revisit all screens.
 Expected: all displayed amounts reflect new selected currency immediately after save.
+
+est Cases (Notifications)
+Notification Center screen
+Open Dashboard → Notifications.
+Expected: in-app list loads (unread by default).
+Read + dismiss actions
+Mark one notification as read.
+Dismiss one notification.
+Expected: read status updates, dismissed item removed from open list.
+Budget overspending alert
+Exceed budget in a month.
+Trigger refresh (POST /notifications/generate via app refresh button).
+Expected: budget overspending notification appears.
+Goal milestone alerts
+Create/update goal to cross 25%, then 50%, etc.
+Expected: milestone notifications appear once per milestone.
+Recurring reminder (1 day before)
+Create recurring rule with next_run_date = tomorrow.
+Refresh notifications.
+Expected: recurring reminder notification appears.
+Bill reminder
+Use recurring category name containing bill/rent/utility/loan/insurance due tomorrow.
+Refresh notifications.
+Expected: bill reminder appears.
+Recurring recorded notification
+Run recurring processing (process-mine or job).
+Expected: notification created each time recurring transaction is recorded.
+Anomaly alert notification
+Trigger anomaly (e.g. duplicate/high transaction).
+Expected: anomaly alert appears in alert center and in notifications center.
+Notification preferences
+In Settings disable a preference (e.g. goal alerts), save.
+Trigger that event again.
+Expected: no new notification for disabled type.
+Local notification delivery
+Keep app active with permissions enabled.
+Generate new unread notification.
+Expected: local notification banner/list appears (non-web platforms).

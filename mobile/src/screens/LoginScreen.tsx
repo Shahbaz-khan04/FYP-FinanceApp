@@ -13,13 +13,25 @@ export const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onLogin = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Enter a valid email address');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
     try {
+      setIsSubmitting(true);
       setError('');
-      await signIn({ email, password });
+      await signIn({ email: email.trim(), password });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -30,7 +42,7 @@ export const LoginScreen = ({ navigation }: Props) => {
       {error ? (
         <Text style={{ color: theme.colors.state.danger, marginBottom: theme.spacing[2] }}>{error}</Text>
       ) : null}
-      <ActionButton label="Login" onPress={onLogin} />
+      <ActionButton label={isSubmitting ? 'Logging in...' : 'Login'} onPress={onLogin} disabled={isSubmitting} />
       <ActionButton label="Create account" onPress={() => navigation.navigate('Signup')} variant="secondary" />
       <ActionButton
         label="Forgot password"

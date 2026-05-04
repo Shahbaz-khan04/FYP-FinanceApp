@@ -9,6 +9,7 @@ import { budgetRouter } from './routes/budget.routes.js';
 import { categoryRouter } from './routes/category.routes.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { createRateLimit } from './middleware/rateLimit.js';
 import { forecastRouter } from './routes/forecast.routes.js';
 import { goalRouter } from './routes/goal.routes.js';
 import { healthRouter } from './routes/health.routes.js';
@@ -28,6 +29,7 @@ export const createApp = () => {
   app.use(helmet());
   app.use(cors());
   app.use(express.json({ limit: '2mb' }));
+  app.use(createRateLimit({ windowMs: 60_000, max: 240, keyPrefix: 'api' }));
   app.use(pinoHttp({ logger }));
 
   app.use('/health', healthRouter);

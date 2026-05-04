@@ -2,25 +2,26 @@ import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
+import { createRateLimit } from '../middleware/rateLimit.js';
 import { transactionService } from '../services/transaction.service.js';
 import { userService } from '../services/user.service.js';
 import { comparePassword, hashPassword, signAuthToken } from '../utils/auth.js';
 import { HttpError } from '../utils/httpError.js';
 
 const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(6),
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().toLowerCase().email().max(120),
+  phone: z.string().trim().min(6).max(24),
   password: z.string().min(8),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email().max(120),
   password: z.string().min(8),
 });
 
 const forgotSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email().max(120),
 });
 
 const resetSchema = z.object({
@@ -29,6 +30,7 @@ const resetSchema = z.object({
 });
 
 export const authRouter = Router();
+const authLimiter = createRateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'auth' });
 
 authRouter.post('/register', async (req, res, next) => {
   try {
@@ -62,7 +64,7 @@ authRouter.post('/register', async (req, res, next) => {
   }
 });
 
-authRouter.post('/login', async (req, res, next) => {
+authRouter.post('/login', authLimiter, async (req, res, next) => {
   try {
     const payload = loginSchema.parse(req.body);
     const user = await userService.findByEmail(payload.email);
@@ -97,7 +99,7 @@ authRouter.post('/logout', async (_req, res) => {
   });
 });
 
-authRouter.post('/forgot-password', async (req, res, next) => {
+authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
   try {
     const payload = forgotSchema.parse(req.body);
     const user = await userService.findByEmail(payload.email);
@@ -126,7 +128,7 @@ authRouter.post('/forgot-password', async (req, res, next) => {
   }
 });
 
-authRouter.post('/reset-password', async (req, res, next) => {
+authRouter.post('/reset-password', authLimiter, async (req, res, next) => {
   try {
     const payload = resetSchema.parse(req.body);
     const userId = await userService.consumeResetToken(payload.token);

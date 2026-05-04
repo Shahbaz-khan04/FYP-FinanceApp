@@ -30,6 +30,7 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string>('');
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -43,10 +44,24 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
 
   const onSave = async () => {
     if (!token) return;
+    const amountValue = Number(amount);
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      setError('Enter a valid amount greater than 0');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setError('Use date format YYYY-MM-DD');
+      return;
+    }
+    if (!paymentMethod.trim()) {
+      setError('Payment method is required');
+      return;
+    }
     try {
+      setIsSaving(true);
       setError('');
       const payload = {
-        amount: Number(amount),
+        amount: amountValue,
         type,
         categoryId: categoryId || null,
         date,
@@ -66,6 +81,8 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save transaction');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -232,7 +249,7 @@ export const AddTransactionScreen = ({ navigation }: Props) => {
         />
 
         {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
-        <ActionButton label="Save transaction" onPress={onSave} />
+        <ActionButton label={isSaving ? 'Saving...' : 'Save transaction'} onPress={onSave} disabled={isSaving} />
       </ScrollView>
     </Screen>
   );

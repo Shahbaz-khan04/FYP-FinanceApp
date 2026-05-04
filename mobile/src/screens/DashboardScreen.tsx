@@ -10,7 +10,7 @@ import { dashboardApi } from '../lib/dashboardApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { DashboardCategoryBreakdown, DashboardMonthTotal, DashboardSummary } from '../types/dashboard';
-import { ActionButton, Screen } from './common';
+import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -30,10 +30,12 @@ export const DashboardScreen = ({ navigation }: Props) => {
   const [monthlyTotals, setMonthlyTotals] = useState<DashboardMonthTotal[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<DashboardCategoryBreakdown[]>([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
+      setIsLoading(true);
       setError('');
       const [summaryData, totalsData, breakdownData] = await Promise.all([
         dashboardApi.getSummary(token, month),
@@ -45,6 +47,8 @@ export const DashboardScreen = ({ navigation }: Props) => {
       setCategoryBreakdown(breakdownData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+    } finally {
+      setIsLoading(false);
     }
   }, [month, token]);
 
@@ -95,6 +99,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Top Spending Categories</Text>
+          {isLoading ? <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>Loading category spending...</Text> : null}
+          {!isLoading && categoryBreakdown.length === 0 ? (
+            <EmptyState title="No category spending yet" subtitle="Add expense transactions to see top categories." />
+          ) : null}
           {categoryBreakdown.slice(0, 5).map((item) => (
             <View key={`${item.name}-${item.categoryId ?? 'none'}`} style={{ marginTop: theme.spacing[2] }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -120,6 +128,10 @@ export const DashboardScreen = ({ navigation }: Props) => {
 
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Recent Transactions</Text>
+          {isLoading ? <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>Loading recent transactions...</Text> : null}
+          {!isLoading && (summary?.recentTransactions?.length ?? 0) === 0 ? (
+            <EmptyState title="No transactions yet" subtitle="Create your first transaction to populate dashboard history." />
+          ) : null}
           {(summary?.recentTransactions ?? []).map((tx) => (
             <View key={tx.id} style={{ marginTop: theme.spacing[2], borderBottomWidth: 1, borderBottomColor: theme.colors.border.subtle, paddingBottom: theme.spacing[2] }}>
               <Text style={{ color: theme.colors.text.primary }}>

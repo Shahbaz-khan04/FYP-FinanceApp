@@ -9,7 +9,7 @@ import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { BudgetItem } from '../types/budget';
-import { ActionButton, Screen } from './common';
+import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Budgets'>;
 
@@ -26,6 +26,7 @@ export const BudgetsScreen = ({ navigation }: Props) => {
   const [month, setMonth] = useState(currentMonth());
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const totals = useMemo(() => {
     const planned = items.reduce((sum, item) => sum + item.plannedAmount, 0);
@@ -36,10 +37,13 @@ export const BudgetsScreen = ({ navigation }: Props) => {
   const load = useCallback(async () => {
     if (!token) return;
     try {
+      setIsLoading(true);
       setError('');
       setItems(await budgetApi.list(token, month));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load budgets');
+    } finally {
+      setIsLoading(false);
     }
   }, [token, month]);
 
@@ -72,6 +76,10 @@ export const BudgetsScreen = ({ navigation }: Props) => {
       {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
 
       <ScrollView style={{ marginTop: theme.spacing[2] }}>
+        {isLoading ? <Text style={{ color: theme.colors.text.secondary }}>Loading budgets...</Text> : null}
+        {!isLoading && items.length === 0 ? (
+          <EmptyState title="No budgets for this month" subtitle="Create a budget to start tracking planned vs actual spend." />
+        ) : null}
         {items.map((item) => (
           <Pressable
             key={item.id}

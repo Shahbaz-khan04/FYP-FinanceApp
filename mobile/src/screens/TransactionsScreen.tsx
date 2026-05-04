@@ -13,7 +13,7 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { Category, TransactionItem, TransactionType } from '../types/transaction';
 import type { AnomalyAlert } from '../types/alert';
-import { ActionButton, Screen } from './common';
+import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Transactions'>;
 
@@ -32,6 +32,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
   const [error, setError] = useState('');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'offline'>('idle');
   const [openAlerts, setOpenAlerts] = useState<AnomalyAlert[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const total = useMemo(
     () => transactions.reduce((sum, item) => sum + (item.type === 'income' ? item.amount : -item.amount), 0),
@@ -41,6 +42,7 @@ export const TransactionsScreen = ({ navigation }: Props) => {
   const load = useCallback(async () => {
     if (!token) return;
     try {
+      setIsLoading(true);
       setError('');
       setSyncStatus(isOnline ? 'idle' : 'offline');
       const [tx, cats] = await Promise.all([
@@ -63,6 +65,8 @@ export const TransactionsScreen = ({ navigation }: Props) => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
+    } finally {
+      setIsLoading(false);
     }
   }, [categoryId, endDate, isOnline, search, startDate, token, type]);
 
@@ -229,6 +233,13 @@ export const TransactionsScreen = ({ navigation }: Props) => {
       {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
 
       <ScrollView style={{ marginTop: theme.spacing[2] }}>
+        {isLoading ? <Text style={{ color: theme.colors.text.secondary }}>Loading transactions...</Text> : null}
+        {!isLoading && transactions.length === 0 ? (
+          <EmptyState
+            title="No transactions found"
+            subtitle="Try changing filters or add a new transaction."
+          />
+        ) : null}
         {transactions.map((item) => (
           <Pressable
             key={item.id}

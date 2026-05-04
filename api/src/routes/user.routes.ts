@@ -5,8 +5,8 @@ import { userService } from '../services/user.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 const profileUpdateSchema = z.object({
-  name: z.string().min(2).optional(),
-  phone: z.string().min(6).optional(),
+  name: z.string().trim().min(2).max(80).optional(),
+  phone: z.string().trim().min(6).max(24).optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
 });
 

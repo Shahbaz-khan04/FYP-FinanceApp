@@ -15,7 +15,7 @@ import type {
   IncomeExpensePoint,
   SpendingTrendPoint,
 } from '../types/report';
-import { ActionButton, Screen } from './common';
+import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 
@@ -150,6 +150,7 @@ export const ReportsScreen = ({ navigation }: Props) => {
 
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Monthly Income vs Expenses</Text>
+          {incomeExpenses.length === 0 ? <EmptyState title="No report data" subtitle="Adjust date range or add transactions." /> : null}
           {incomeExpenses.map((item) => (
             <View key={item.month} style={{ marginTop: theme.spacing[2] }}>
               <Text style={{ color: theme.colors.text.secondary }}>{item.month}</Text>
@@ -165,6 +166,7 @@ export const ReportsScreen = ({ navigation }: Props) => {
 
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Category-wise Spending</Text>
+          {categorySpending.length === 0 ? <EmptyState title="No category spending data" subtitle="Expense transactions are needed for this report." /> : null}
           {categorySpending.map((item) => (
             <View key={item.category} style={{ marginTop: theme.spacing[2] }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

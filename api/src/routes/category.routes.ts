@@ -5,7 +5,7 @@ import { transactionService } from '../services/transaction.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 const createCategorySchema = z.object({
-  name: z.string().min(2).max(64),
+  name: z.string().trim().min(2).max(64),
   type: z.enum(['income', 'expense']),
   icon: z.string().min(1).max(30),
   color: z
@@ -16,6 +16,7 @@ const createCategorySchema = z.object({
 const listCategoryQuerySchema = z.object({
   type: z.enum(['income', 'expense']).optional(),
 });
+const categoryIdSchema = z.object({ categoryId: z.string().uuid() });
 
 export const categoryRouter = Router();
 categoryRouter.use(authMiddleware);
@@ -53,7 +54,8 @@ categoryRouter.delete('/:categoryId', async (req, res, next) => {
     const userId = req.authUserId;
     if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
 
-    await transactionService.deleteCategory(userId, req.params.categoryId);
+    const { categoryId } = categoryIdSchema.parse(req.params);
+    await transactionService.deleteCategory(userId, categoryId);
     res.json({ data: { ok: true }, error: null });
   } catch (error) {
     next(error);

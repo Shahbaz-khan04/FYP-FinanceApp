@@ -8,7 +8,7 @@ import { goalApi } from '../lib/goalApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
 import type { GoalItem } from '../types/goal';
-import { ActionButton, Screen } from './common';
+import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Goals'>;
 
@@ -17,14 +17,18 @@ export const GoalsScreen = ({ navigation }: Props) => {
   const preferredCurrency = getPreferredCurrency(user?.settings);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
+      setIsLoading(true);
       setError('');
       setGoals(await goalApi.list(token));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load goals');
+    } finally {
+      setIsLoading(false);
     }
   }, [token]);
 
@@ -40,6 +44,10 @@ export const GoalsScreen = ({ navigation }: Props) => {
       {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
 
       <ScrollView style={{ marginTop: theme.spacing[2] }}>
+        {isLoading ? <Text style={{ color: theme.colors.text.secondary }}>Loading goals...</Text> : null}
+        {!isLoading && goals.length === 0 ? (
+          <EmptyState title="No goals yet" subtitle="Create a savings goal to track progress." />
+        ) : null}
         {goals.map((goal) => (
           <Pressable
             key={goal.id}

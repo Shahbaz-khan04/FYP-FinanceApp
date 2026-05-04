@@ -13,15 +13,23 @@ export const ForgotPasswordScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onRequest = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Enter a valid email address');
+      return;
+    }
     try {
+      setIsSubmitting(true);
       setError('');
-      const resetToken = await requestResetToken(email);
+      const resetToken = await requestResetToken(email.trim());
       const tokenInfo = resetToken ? ` Dev token: ${resetToken}` : '';
       setMessage(`Reset flow started.${tokenInfo}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -30,7 +38,11 @@ export const ForgotPasswordScreen = ({ navigation }: Props) => {
       <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       {error ? <Text style={{ color: theme.colors.state.danger }}>{error}</Text> : null}
       {message ? <Text style={{ color: theme.colors.state.success }}>{message}</Text> : null}
-      <ActionButton label="Request reset token" onPress={onRequest} />
+      <ActionButton
+        label={isSubmitting ? 'Requesting...' : 'Request reset token'}
+        onPress={onRequest}
+        disabled={isSubmitting}
+      />
       <ActionButton label="Go to reset screen" onPress={() => navigation.navigate('ResetPassword')} variant="secondary" />
     </Screen>
   );

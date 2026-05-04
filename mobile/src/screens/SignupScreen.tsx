@@ -15,13 +15,33 @@ export const SignupScreen = ({ navigation }: Props) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSignup = async () => {
+    if (name.trim().length < 2) {
+      setError('Name must be at least 2 characters');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setError('Enter a valid email address');
+      return;
+    }
+    if (phone.trim().length < 6) {
+      setError('Phone must be at least 6 characters');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
     try {
+      setIsSubmitting(true);
       setError('');
-      await signUp({ name, email, phone, password });
+      await signUp({ name: name.trim(), email: email.trim(), phone: phone.trim(), password });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -34,7 +54,7 @@ export const SignupScreen = ({ navigation }: Props) => {
       {error ? (
         <Text style={{ color: theme.colors.state.danger, marginBottom: theme.spacing[2] }}>{error}</Text>
       ) : null}
-      <ActionButton label="Create account" onPress={onSignup} />
+      <ActionButton label={isSubmitting ? 'Creating account...' : 'Create account'} onPress={onSignup} disabled={isSubmitting} />
       <ActionButton label="Back to login" onPress={() => navigation.navigate('Login')} variant="secondary" />
     </Screen>
   );

@@ -56,12 +56,17 @@ export const ActionButton = ({
   label,
   onPress,
   variant = 'primary',
+  disabled = false,
 }: {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary';
+  disabled?: boolean;
 }) => (
   <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    disabled={disabled}
     onPress={onPress}
     style={{
       backgroundColor:
@@ -70,6 +75,7 @@ export const ActionButton = ({
       paddingVertical: theme.spacing[3],
       alignItems: 'center',
       marginTop: theme.spacing[2],
+      opacity: disabled ? 0.6 : 1,
     }}
   >
     <Text
@@ -81,4 +87,22 @@ export const ActionButton = ({
       {label}
     </Text>
   </Pressable>
+);
+
+export const EmptyState = ({ title, subtitle }: { title: string; subtitle: string }) => (
+  <View
+    style={{
+      marginTop: theme.spacing[3],
+      backgroundColor: theme.colors.background.surface,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border.subtle,
+      padding: theme.spacing[4],
+    }}
+  >
+    <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>{title}</Text>
+    <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
+      {subtitle}
+    </Text>
+  </View>
 );
