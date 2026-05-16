@@ -48,14 +48,16 @@ type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
   isBootstrapping: boolean;
-  signUp: (payload: { name: string; email: string; phone: string; password: string }) => Promise<void>;
-  signIn: (payload: { email: string; password: string }) => Promise<void>;
+  signUp: (payload: { name: string; email?: string; phone?: string; password: string }) => Promise<void>;
+  signIn: (payload: { identifier: string; password: string }) => Promise<void>;
+  signInWithGoogle: (payload: { idToken: string; phone?: string }) => Promise<void>;
   logout: () => Promise<void>;
   requestResetToken: (email: string) => Promise<string | null>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  updateProfile: (payload: { name: string; phone: string }) => Promise<void>;
+  updateProfile: (payload: { name: string; phone?: string | null }) => Promise<void>;
   updateSettings: (settings: UserSettings) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   currencyRatesBase: string | null;
   currencyRates: Record<string, number> | null;
   refreshCurrencyRates: () => Promise<void>;
@@ -140,7 +142,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, [token, user?.settings?.currency]);
 
   const signIn = useCallback(
-    async (payload: { email: string; password: string }) => {
+    async (payload: { identifier: string; password: string }) => {
       const response = await apiClient<{ data: AuthResponse; error: null }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -151,8 +153,19 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     [persistSession],
   );
 
+  const signInWithGoogle = useCallback(
+    async (payload: { idToken: string; phone?: string }) => {
+      const response = await apiClient<{ data: AuthResponse; error: null }>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      await persistSession(response.data);
+    },
+    [persistSession],
+  );
+
   const signUp = useCallback(
-    async (payload: { name: string; email: string; phone: string; password: string }) => {
+    async (payload: { name: string; email?: string; phone?: string; password: string }) => {
       const response = await apiClient<{ data: AuthResponse; error: null }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -196,7 +209,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, []);
 
   const updateProfile = useCallback(
-    async (payload: { name: string; phone: string }) => {
+    async (payload: { name: string; phone?: string | null }) => {
       if (!token) return;
 
       const response = await apiClient<{ data: AuthUser; error: null }>('/users/me', {
@@ -234,6 +247,15 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     },
     [token],
   );
+
+  const deleteAccount = useCallback(async () => {
+    if (!token) return;
+    await apiClient('/users/me', {
+      method: 'DELETE',
+      token,
+    });
+    await clearSession();
+  }, [clearSession, token]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -274,6 +296,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       token,
       isBootstrapping,
       signIn,
+      signInWithGoogle,
       signUp,
       logout,
       requestResetToken,
@@ -281,6 +304,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       refreshProfile,
       updateProfile,
       updateSettings,
+      deleteAccount,
       currencyRatesBase,
       currencyRates,
       refreshCurrencyRates,
@@ -290,6 +314,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       token,
       isBootstrapping,
       signIn,
+      signInWithGoogle,
       signUp,
       logout,
       requestResetToken,
@@ -297,6 +322,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       refreshProfile,
       updateProfile,
       updateSettings,
+      deleteAccount,
       currencyRatesBase,
       currencyRates,
       refreshCurrencyRates,

@@ -1,13 +1,43 @@
 create table if not exists public.app_users (
   id uuid primary key,
   name text not null,
-  email text not null unique,
-  phone text not null,
+  email text null,
+  phone text null,
   password_hash text not null,
   settings jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  check (email is not null or phone is not null)
 );
+
+alter table public.app_users alter column email drop not null;
+alter table public.app_users alter column phone drop not null;
+do $$
+begin
+  if exists (
+    select 1 from information_schema.table_constraints
+    where constraint_name = 'app_users_email_key' and table_name = 'app_users'
+  ) then
+    alter table public.app_users drop constraint app_users_email_key;
+  end if;
+exception when others then
+  null;
+end $$;
+drop index if exists idx_app_users_phone_unique;
+create unique index if not exists idx_app_users_email_unique_not_null on public.app_users(email) where email is not null;
+create unique index if not exists idx_app_users_phone_unique_not_null on public.app_users(phone) where phone is not null;
+
+create table if not exists public.user_social_identities (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  provider text not null check (provider in ('google')),
+  provider_user_id text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(provider, provider_user_id)
+);
+
+create index if not exists idx_user_social_identities_user on public.user_social_identities(user_id);
 
 create table if not exists public.password_reset_tokens (
   id uuid primary key,
@@ -64,12 +94,27 @@ create table if not exists public.budgets (
   month char(7) not null,
   category_id uuid not null references public.categories(id) on delete cascade,
   planned_amount numeric(14,2) not null check (planned_amount > 0),
+  planned_percent numeric(7,3) null check (planned_percent > 0 and planned_percent <= 100),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, month, category_id)
 );
 
 create index if not exists idx_budgets_user_month on public.budgets(user_id, month);
+alter table public.budgets add column if not exists planned_percent numeric(7,3) null check (planned_percent > 0 and planned_percent <= 100);
+
+create table if not exists public.budget_plans (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  month char(7) not null,
+  methodology text not null check (methodology in ('percentage', 'envelope', 'zero_based')),
+  total_income numeric(14,2) null check (total_income is null or total_income >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, month)
+);
+
+create index if not exists idx_budget_plans_user_month on public.budget_plans(user_id, month);
 
 create table if not exists public.goals (
   id uuid primary key,

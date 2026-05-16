@@ -26,8 +26,8 @@ export const userService = {
 
   async createUser(params: {
     name: string;
-    email: string;
-    phone: string;
+    email: string | null;
+    phone: string | null;
     passwordHash: string;
   }) {
     const db = requireDb();
@@ -38,7 +38,7 @@ export const userService = {
       .insert({
         id: randomUUID(),
         name: params.name,
-        email: params.email.toLowerCase(),
+        email: params.email ? params.email.toLowerCase() : null,
         phone: params.phone,
         password_hash: params.passwordHash,
         settings: {},
@@ -60,6 +60,7 @@ export const userService = {
   },
 
   async findByEmail(email: string) {
+    if (!email.trim()) return null;
     const db = requireDb();
 
     const { data, error } = await db
@@ -87,11 +88,21 @@ export const userService = {
     return data;
   },
 
+  async findByPhone(phone: string) {
+    if (!phone.trim()) return null;
+    const db = requireDb();
+    const { data, error } = await db.from('app_users').select('*').eq('phone', phone).maybeSingle<AppUser>();
+    if (error) {
+      throw new HttpError(500, 'DB_READ_FAILED', 'Could not fetch user');
+    }
+    return data;
+  },
+
   async updateProfile(
     id: string,
     updates: {
       name?: string;
-      phone?: string;
+      phone?: string | null;
       settings?: Record<string, unknown>;
     },
   ) {
@@ -175,6 +186,50 @@ export const userService = {
 
     if (error) {
       throw new HttpError(500, 'PASSWORD_UPDATE_FAILED', 'Could not update password');
+    }
+  },
+
+  async deleteUser(userId: string) {
+    const db = requireDb();
+    const { error } = await db.from('app_users').delete().eq('id', userId);
+    if (error) {
+      throw new HttpError(500, 'USER_DELETE_FAILED', 'Could not delete user account');
+    }
+  },
+
+  async findUserBySocialIdentity(provider: 'google', providerUserId: string) {
+    const db = requireDb();
+    const { data, error } = await db
+      .from('user_social_identities')
+      .select('user_id')
+      .eq('provider', provider)
+      .eq('provider_user_id', providerUserId)
+      .maybeSingle<{ user_id: string }>();
+    if (error) {
+      throw new HttpError(500, 'SOCIAL_IDENTITY_READ_FAILED', 'Could not read social identity');
+    }
+    if (!data) return null;
+    return this.findById(data.user_id);
+  },
+
+  async upsertSocialIdentity(userId: string, provider: 'google', providerUserId: string) {
+    const db = requireDb();
+    const now = new Date().toISOString();
+    const { error } = await db.from('user_social_identities').upsert(
+      {
+        id: randomUUID(),
+        user_id: userId,
+        provider,
+        provider_user_id: providerUserId,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        onConflict: 'provider,provider_user_id',
+      },
+    );
+    if (error) {
+      throw new HttpError(500, 'SOCIAL_IDENTITY_UPSERT_FAILED', 'Could not save social identity');
     }
   },
 };

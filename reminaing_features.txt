@@ -1,0 +1,61 @@
+## Implemented
+
+- Email/password auth: sign up, login, logout, forgot/reset password
+- Profile view/update
+- Settings persistence (notifications, theme, preferred currency + alert toggles)
+- Manual transaction CRUD (income/expense), tags, filtering, history
+- Custom category CRUD
+- Receipt scanning via OCR API + create/link transaction from OCR result
+- Recurring transaction rules + due-processing
+- Budgets with planned vs actual, over-limit indicators, monthly navigation
+- Goals CRUD + progress + mark complete
+- Reports:
+  - income vs expenses
+  - category spending
+  - spending trend
+  - budget vs actual
+  - goal progress
+- Forecasting summary (next-month projection + risk/warnings)
+- Anomaly alerts (detection, listing, dismiss)
+- Recommendation engine (budget/spending/goal prioritization suggestions)
+- Multi-currency rates + user preferred-currency conversion
+- Help center: FAQ browse/search, submit question, view own questions
+- Notifications center: generate/list/read/dismiss
+- JWT-based auth, password hashing, secure token storage in app
+
+
+## Partially Implemented (and what’s left)
+
+- **User account management**
+  - Missing: account deletion
+- **Login options**
+  - Login is email+password only; phone login not implemented
+  - Google/Apple sign-up/login not implemented
+- **Budget methodologies**
+  - Budgeting exists, but not explicit methodology modes (percentage/envelope/zero-based) as first-class features
+- **Goal prioritization**
+  - Implemented in recommendations, but not surfaced as a dedicated goal-priority workflow in goals UI
+- **Data visualization**
+  - Charts are custom bar/progress visuals; no Chart.js integration as specified
+- **Notifications**
+  - In-app notifications exist; no OS push notification delivery pipeline shown
+
+## Not Implemented
+
+- Admin panel/features:
+  - admin login
+  - FAQ management (add/update/delete by admin)
+  - admin response tooling for help questions
+
+
+Last:
+- **AI/ML expense categorization**
+  - No real auto-categorization on transaction creation; categorization is manual
+  - “AI/ML/NLP” behavior in document is not implemented as a model-based classifier
+- **Offline support**
+  - Strong for transactions (offline create/edit/delete + sync + latest-wins conflict handling)
+  - Missing for budgets/goals/reports/help/notifications/receipts full offline workflows
+  - Offline receipt attachment queue/sync not implemented
+- **Security claim (“encryption at rest and transit”)**
+  - Transit is covered (HTTP stack; JWT), local token secure storage is used
+  - Explicit app-level DB encryption-at-rest implementation/config is not shown in this repo (may rely on platform/Supabase defaults)

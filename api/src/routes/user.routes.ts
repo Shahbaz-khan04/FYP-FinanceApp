@@ -6,7 +6,10 @@ import { HttpError } from '../utils/httpError.js';
 
 const profileUpdateSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
-  phone: z.string().trim().min(6).max(24).optional(),
+  phone: z
+    .union([z.string().trim().min(6).max(24), z.literal(''), z.null()])
+    .optional()
+    .transform((value) => (value === '' ? null : value)),
   settings: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -47,6 +50,22 @@ userRouter.patch('/me', async (req, res, next) => {
 
     res.json({
       data: userService.toPublicUser(user),
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+userRouter.delete('/me', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+    }
+    await userService.deleteUser(userId);
+    res.json({
+      data: { ok: true },
       error: null,
     });
   } catch (error) {

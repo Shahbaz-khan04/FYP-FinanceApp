@@ -1,12 +1,32 @@
 import { apiClient } from './apiClient';
-import type { BudgetItem, BudgetPayload } from '../types/budget';
+import type { BudgetListResponse, BudgetPayload, BudgetPlan } from '../types/budget';
 
 export const budgetApi = {
   async list(token: string, month: string) {
-    const response = await apiClient<{ data: BudgetItem[]; error: null }>(
+    const response = await apiClient<{ data: BudgetListResponse; error: null }>(
       `/budgets?month=${month}`,
       { method: 'GET', token },
     );
+    return response.data;
+  },
+
+  async getPlan(token: string, month: string) {
+    const response = await apiClient<{ data: BudgetPlan; error: null }>(
+      `/budgets/plan?month=${month}`,
+      { method: 'GET', token },
+    );
+    return response.data;
+  },
+
+  async savePlan(
+    token: string,
+    payload: { month: string; methodology: 'percentage' | 'envelope' | 'zero_based'; totalIncome?: number | null },
+  ) {
+    const response = await apiClient<{ data: BudgetPlan; error: null }>(`/budgets/plan`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(payload),
+    });
     return response.data;
   },
 
@@ -35,4 +55,3 @@ export const budgetApi = {
     });
   },
 };
-

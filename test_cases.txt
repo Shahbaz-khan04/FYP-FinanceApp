@@ -853,3 +853,74 @@ Local notification delivery
 Keep app active with permissions enabled.
 Generate new unread notification.
 Expected: local notification banner/list appears (non-web platforms).
+
+Budget Methodologies Test CasesSetupEnsure DB migration from `supabase-schema.sql` is applied.
+Login with a user that has categories and can open Budgets screen.
+A. Plan-level behaviorOpen Budgets for current month.
+Expected: methodology selector visible (Envelope, Percentage, Zero-Based).
+
+Select Envelope and save without income.
+Expected: save succeeds.
+
+Select Percentage and save with empty income.
+Expected: error (income required).
+
+Select Percentage with income 100000 and save.
+Expected: save succeeds.
+
+Select Zero-Based with income 50000 and save.
+Expected: save succeeds.
+
+B. Envelope methodologySet month plan to Envelope.
+
+Create category budget with amount 12000.
+Expected: budget created.
+
+Create second category budget with amount 8000.
+Expected: budget created (no cap enforcement).
+
+Verify list totals.
+Expected: Planned = 20000, actual/remaining consistent.
+
+C. Percentage methodologySet month plan to Percentage, income 100000.
+
+Create category budget with percent 30.
+Expected: planned amount computed as 30000.
+
+Create category budget with amount only 15000 (percent empty).
+Expected: created; percent derived (~`15%`).
+
+Try percent 0, -5, 150.
+Expected: validation error.
+
+Verify allocation summary in list.
+Expected: percentage allocation shown and reflects total planned/income.
+
+D. Zero-based methodologySet month plan to Zero-Based, income 50000.
+
+Add budget A 30000, budget B 15000.
+Expected: both succeed (total 45000).
+
+Add budget C 7000.
+Expected: fails (ZERO_BASED_OVER_ALLOCATED / exceeds income).
+
+Edit budget B from 15000 to 22000 (would exceed total).
+Expected: fails.
+
+Edit budget B from 15000 to 18000 (exact total 48000 or valid <= 50000).
+Expected: succeeds.
+
+E. Methodology switchingStart with Envelope + large planned totals.
+
+Switch to Zero-Based with low income below existing total planned.
+Expected: save fails (existing allocations exceed income).
+
+Increase income and save again.
+Expected: succeeds.
+
+Switch to Percentage and confirm editor shows percent input for new/edit budget.
+Expected: percent field appears only in Percentage mode.
+
+F. Regression checksCreate/edit/delete budget still works in all three modes.
+Budget list still shows near-limit/over-budget states.
+Reports budget-vs-actual still load for month.

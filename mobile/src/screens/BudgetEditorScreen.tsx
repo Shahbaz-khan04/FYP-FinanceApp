@@ -7,6 +7,7 @@ import { budgetApi } from '../lib/budgetApi';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
+import type { BudgetMethodology } from '../types/budget';
 import type { Category } from '../types/transaction';
 import { ActionButton, Screen } from './common';
 
@@ -19,12 +20,18 @@ export const BudgetEditorScreen = ({ route, navigation }: Props) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState(existing?.categoryId ?? '');
   const [plannedAmount, setPlannedAmount] = useState(existing ? String(existing.plannedAmount) : '');
+  const [plannedPercent, setPlannedPercent] = useState(existing?.plannedPercent ? String(existing.plannedPercent) : '');
+  const [methodology, setMethodology] = useState<BudgetMethodology>('envelope');
+  const [totalIncome, setTotalIncome] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       if (!token) return;
       const data = await transactionsApi.listCategories(token, 'expense');
+      const plan = await budgetApi.getPlan(token, month);
+      setMethodology(plan.methodology);
+      setTotalIncome(plan.totalIncome);
       setCategories(data);
       if (!existing && data.length > 0 && !categoryId) {
         setCategoryId(data[0].id);
@@ -40,7 +47,13 @@ export const BudgetEditorScreen = ({ route, navigation }: Props) => {
       const payload = {
         month,
         categoryId,
-        plannedAmount: Number(plannedAmount),
+        ...(methodology === 'percentage'
+          ? {
+              ...(plannedPercent.trim()
+                ? { plannedPercent: Number(plannedPercent) }
+                : { plannedAmount: Number(plannedAmount) }),
+            }
+          : { plannedAmount: Number(plannedAmount) }),
       };
       if (existing) await budgetApi.update(token, existing.id, payload);
       else await budgetApi.create(token, payload);
@@ -82,7 +95,7 @@ export const BudgetEditorScreen = ({ route, navigation }: Props) => {
         <TextInput
           value={plannedAmount}
           onChangeText={setPlannedAmount}
-          placeholder="Planned amount"
+          placeholder={methodology === 'percentage' ? 'Planned amount (optional)' : 'Planned amount'}
           keyboardType="decimal-pad"
           placeholderTextColor={theme.colors.text.muted}
           style={{
@@ -96,6 +109,40 @@ export const BudgetEditorScreen = ({ route, navigation }: Props) => {
             backgroundColor: theme.colors.background.surface,
           }}
         />
+        {methodology === 'percentage' ? (
+          <>
+            <TextInput
+              value={plannedPercent}
+              onChangeText={setPlannedPercent}
+              placeholder="Planned percent (0-100)"
+              keyboardType="decimal-pad"
+              placeholderTextColor={theme.colors.text.muted}
+              style={{
+                marginTop: theme.spacing[2],
+                borderWidth: 1,
+                borderColor: theme.colors.border.subtle,
+                borderRadius: theme.radius.md,
+                paddingHorizontal: theme.spacing[3],
+                paddingVertical: theme.spacing[2],
+                color: theme.colors.text.primary,
+                backgroundColor: theme.colors.background.surface,
+              }}
+            />
+            <Text style={{ color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+              Method: Percentage • Total income: {totalIncome ?? 0}
+            </Text>
+          </>
+        ) : null}
+        {methodology === 'zero_based' ? (
+          <Text style={{ color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+            Method: Zero-Based • Total income cap: {totalIncome ?? 0}
+          </Text>
+        ) : null}
+        {methodology === 'envelope' ? (
+          <Text style={{ color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+            Method: Envelope
+          </Text>
+        ) : null}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: theme.spacing[2] }}>
           <View style={{ flexDirection: 'row', gap: theme.spacing[2] }}>
@@ -129,4 +176,3 @@ export const BudgetEditorScreen = ({ route, navigation }: Props) => {
     </Screen>
   );
 };
-

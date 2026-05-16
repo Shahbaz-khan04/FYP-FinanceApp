@@ -17,13 +17,28 @@ export const apiClient = async <T>(path: string, options: RequestOptions = {}) =
     headers,
   });
 
-  const payload = (await response.json()) as
+  const raw = await response.text();
+  let payload:
     | T
     | {
         error?: {
           message?: string;
         };
       };
+  try {
+    payload = JSON.parse(raw) as
+      | T
+      | {
+          error?: {
+            message?: string;
+          };
+        };
+  } catch {
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    throw new Error('Unexpected API response format');
+  }
 
   if (!response.ok) {
     const errorMessage =

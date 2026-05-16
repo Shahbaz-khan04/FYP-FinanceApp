@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env.js';
 import { createRateLimit } from '../middleware/rateLimit.js';
+import { googleAuthService } from '../services/googleAuth.service.js';
 import { transactionService } from '../services/transaction.service.js';
 import { userService } from '../services/user.service.js';
 import { comparePassword, hashPassword, signAuthToken } from '../utils/auth.js';
@@ -10,14 +11,28 @@ import { HttpError } from '../utils/httpError.js';
 
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(80),
-  email: z.string().trim().toLowerCase().email().max(120),
-  phone: z.string().trim().min(6).max(24),
+  email: z.string().trim().toLowerCase().email().max(120).optional(),
+  phone: z.string().trim().min(6).max(24).optional(),
   password: z.string().min(8),
+}).superRefine((value, ctx) => {
+  if (!value.email?.trim() && !value.phone?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['email'],
+      message: 'Email or phone is required',
+    });
+  }
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(120),
+  identifier: z.string().trim().min(3).max(120).optional(),
+  email: z.string().trim().toLowerCase().email().max(120).optional(),
   password: z.string().min(8),
+});
+
+const googleAuthSchema = z.object({
+  idToken: z.string().min(20),
+  phone: z.string().trim().min(6).max(24).optional(),
 });
 
 const forgotSchema = z.object({
@@ -35,22 +50,25 @@ const authLimiter = createRateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'aut
 authRouter.post('/register', async (req, res, next) => {
   try {
     const payload = registerSchema.parse(req.body);
-    const existing = await userService.findByEmail(payload.email);
-
-    if (existing) {
-      throw new HttpError(409, 'USER_EXISTS', 'User already exists');
+    if (payload.email) {
+      const existingByEmail = await userService.findByEmail(payload.email);
+      if (existingByEmail) throw new HttpError(409, 'USER_EXISTS', 'User already exists');
+    }
+    if (payload.phone) {
+      const existingByPhone = await userService.findByPhone(payload.phone);
+      if (existingByPhone) throw new HttpError(409, 'USER_EXISTS', 'User already exists');
     }
 
     const passwordHash = await hashPassword(payload.password);
     const user = await userService.createUser({
       name: payload.name,
-      email: payload.email,
-      phone: payload.phone,
+      email: payload.email ?? null,
+      phone: payload.phone ?? null,
       passwordHash,
     });
     await transactionService.seedDefaultCategories(user.id);
 
-    const token = signAuthToken({ sub: user.id, email: user.email });
+    const token = signAuthToken({ sub: user.id, email: user.email ?? undefined });
 
     res.status(201).json({
       data: {
@@ -67,7 +85,14 @@ authRouter.post('/register', async (req, res, next) => {
 authRouter.post('/login', authLimiter, async (req, res, next) => {
   try {
     const payload = loginSchema.parse(req.body);
-    const user = await userService.findByEmail(payload.email);
+    const identifier = (payload.identifier ?? payload.email ?? '').trim();
+    if (!identifier) {
+      throw new HttpError(400, 'LOGIN_IDENTIFIER_REQUIRED', 'Email or phone is required');
+    }
+
+    const user = identifier.includes('@')
+      ? await userService.findByEmail(identifier.toLowerCase())
+      : await userService.findByPhone(identifier);
 
     if (!user) {
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
@@ -78,7 +103,43 @@ authRouter.post('/login', authLimiter, async (req, res, next) => {
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
-    const token = signAuthToken({ sub: user.id, email: user.email });
+    const token = signAuthToken({ sub: user.id, email: user.email ?? undefined });
+
+    res.json({
+      data: {
+        token,
+        user: userService.toPublicUser(user),
+      },
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post('/google', authLimiter, async (req, res, next) => {
+  try {
+    const payload = googleAuthSchema.parse(req.body);
+    const google = await googleAuthService.verifyIdToken(payload.idToken);
+    let user = await userService.findUserBySocialIdentity('google', google.providerUserId);
+
+    if (!user) {
+      user = await userService.findByEmail(google.email);
+    }
+
+    if (!user) {
+      const passwordHash = await hashPassword(randomBytes(24).toString('hex'));
+      user = await userService.createUser({
+        name: google.name,
+        email: google.email,
+        phone: payload.phone ?? null,
+        passwordHash,
+      });
+      await transactionService.seedDefaultCategories(user.id);
+    }
+
+    await userService.upsertSocialIdentity(user.id, 'google', google.providerUserId);
+    const token = signAuthToken({ sub: user.id, email: user.email ?? undefined });
 
     res.json({
       data: {

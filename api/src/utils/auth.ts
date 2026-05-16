@@ -5,7 +5,7 @@ import { HttpError } from './httpError.js';
 
 type AuthTokenPayload = {
   sub: string;
-  email: string;
+  email?: string | null;
 };
 
 export const hashPassword = async (password: string) => bcrypt.hash(password, 10);
@@ -25,13 +25,13 @@ export const verifyAuthToken = (token: string): AuthTokenPayload => {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
-    if (!decoded.sub || !decoded.email) {
+    if (!decoded.sub) {
       throw new HttpError(401, 'UNAUTHORIZED', 'Invalid token payload');
     }
 
     return {
       sub: String(decoded.sub),
-      email: String(decoded.email),
+      email: decoded.email ? String(decoded.email) : null,
     };
   } catch {
     throw new HttpError(401, 'UNAUTHORIZED', 'Invalid or expired token');

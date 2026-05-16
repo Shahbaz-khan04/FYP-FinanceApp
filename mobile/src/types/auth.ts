@@ -12,8 +12,8 @@ export type UserSettings = {
 export type AuthUser = {
   id: string;
   name: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   settings: UserSettings;
   createdAt: string;
   updatedAt: string;

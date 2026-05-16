@@ -11,13 +11,21 @@ const budgetQuerySchema = z.object({
 const createBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
   categoryId: z.string().uuid(),
-  plannedAmount: z.number().positive(),
+  plannedAmount: z.number().positive().optional(),
+  plannedPercent: z.number().positive().max(100).optional(),
 });
 
 const updateBudgetSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   categoryId: z.string().uuid().optional(),
   plannedAmount: z.number().positive().optional(),
+  plannedPercent: z.number().positive().max(100).optional(),
+});
+
+const planSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  methodology: z.enum(['percentage', 'envelope', 'zero_based']),
+  totalIncome: z.number().nonnegative().nullable().optional(),
 });
 
 export const budgetRouter = Router();
@@ -29,6 +37,30 @@ budgetRouter.get('/', async (req, res, next) => {
     if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
     const query = budgetQuerySchema.parse(req.query);
     const data = await budgetService.listBudgets(userId, query.month);
+    res.json({ data, error: null });
+  } catch (error) {
+    next(error);
+  }
+});
+
+budgetRouter.get('/plan', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+    const query = budgetQuerySchema.parse(req.query);
+    const data = await budgetService.getPlan(userId, query.month);
+    res.json({ data, error: null });
+  } catch (error) {
+    next(error);
+  }
+});
+
+budgetRouter.put('/plan', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+    const payload = planSchema.parse(req.body);
+    const data = await budgetService.upsertPlan(userId, payload);
     res.json({ data, error: null });
   } catch (error) {
     next(error);
@@ -69,4 +101,3 @@ budgetRouter.delete('/:budgetId', async (req, res, next) => {
     next(error);
   }
 });
-

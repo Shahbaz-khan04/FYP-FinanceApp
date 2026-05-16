@@ -51,6 +51,16 @@ export const createApp = () => {
   app.use('/jobs/recurring', recurringJobRouter);
   app.use('/forecast', forecastRouter);
 
+  app.use((_req, res) => {
+    res.status(404).json({
+      data: null,
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Route not found',
+      },
+    });
+  });
+
   app.use(errorHandler);
 
   return app;

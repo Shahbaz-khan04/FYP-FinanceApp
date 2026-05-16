@@ -23,6 +23,7 @@ const envSchema = z.object({
   OCR_SPACE_API_URL: z.string().url().default('https://api.ocr.space/parse/image'),
   EXCHANGE_RATE_API_KEY: z.string().optional(),
   EXCHANGE_RATE_API_BASE_URL: z.string().url().default('https://v6.exchangerate-api.com/v6'),
+  GOOGLE_CLIENT_IDS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

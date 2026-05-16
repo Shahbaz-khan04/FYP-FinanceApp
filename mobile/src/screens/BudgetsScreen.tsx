@@ -1,14 +1,14 @@
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
 import { budgetApi } from '../lib/budgetApi';
 import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
-import type { BudgetItem } from '../types/budget';
+import type { BudgetItem, BudgetMethodology } from '../types/budget';
 import { ActionButton, EmptyState, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Budgets'>;
@@ -25,6 +25,8 @@ export const BudgetsScreen = ({ navigation }: Props) => {
   const preferredCurrency = getPreferredCurrency(user?.settings);
   const [month, setMonth] = useState(currentMonth());
   const [items, setItems] = useState<BudgetItem[]>([]);
+  const [methodology, setMethodology] = useState<BudgetMethodology>('envelope');
+  const [totalIncome, setTotalIncome] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,13 +41,33 @@ export const BudgetsScreen = ({ navigation }: Props) => {
     try {
       setIsLoading(true);
       setError('');
-      setItems(await budgetApi.list(token, month));
+      const result = await budgetApi.list(token, month);
+      setItems(result.items);
+      setMethodology(result.plan.methodology);
+      setTotalIncome(result.plan.totalIncome === null ? '' : String(result.plan.totalIncome));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load budgets');
     } finally {
       setIsLoading(false);
     }
   }, [token, month]);
+
+  const savePlan = async () => {
+    if (!token) return;
+    try {
+      setError('');
+      await budgetApi.savePlan(token, {
+        month,
+        methodology,
+        ...(methodology !== 'envelope'
+          ? { totalIncome: totalIncome.trim() ? Number(totalIncome) : null }
+          : { totalIncome: null }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save budget plan');
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -69,6 +91,60 @@ export const BudgetsScreen = ({ navigation }: Props) => {
         <Text style={{ color: theme.colors.text.secondary }}>
           Planned: {formatMoney(totals.planned, preferredCurrency)} • Spent: {formatMoney(totals.actual, preferredCurrency)} • Remaining: {formatMoney(totals.remaining, preferredCurrency)}
         </Text>
+      </View>
+
+      <View
+        style={{
+          marginTop: theme.spacing[2],
+          backgroundColor: theme.colors.background.surface,
+          borderRadius: theme.radius.md,
+          padding: theme.spacing[3],
+          borderWidth: 1,
+          borderColor: theme.colors.border.subtle,
+        }}
+      >
+        <Text style={{ color: theme.colors.text.secondary, marginBottom: theme.spacing[2] }}>
+          Methodology for {month}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: theme.spacing[2], flexWrap: 'wrap' }}>
+          {(['envelope', 'percentage', 'zero_based'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              onPress={() => setMethodology(mode)}
+              style={{
+                paddingVertical: theme.spacing[2],
+                paddingHorizontal: theme.spacing[3],
+                borderRadius: theme.radius.pill,
+                backgroundColor:
+                  methodology === mode ? theme.colors.brand.primary : theme.colors.background.surfaceRaised,
+              }}
+            >
+              <Text style={{ color: methodology === mode ? theme.colors.text.inverse : theme.colors.text.primary }}>
+                {mode === 'zero_based' ? 'Zero-Based' : mode[0].toUpperCase() + mode.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {methodology !== 'envelope' ? (
+          <TextInput
+            value={totalIncome}
+            onChangeText={setTotalIncome}
+            placeholder="Monthly total income"
+            keyboardType="decimal-pad"
+            placeholderTextColor={theme.colors.text.muted}
+            style={{
+              marginTop: theme.spacing[2],
+              borderWidth: 1,
+              borderColor: theme.colors.border.subtle,
+              borderRadius: theme.radius.md,
+              paddingHorizontal: theme.spacing[3],
+              paddingVertical: theme.spacing[2],
+              color: theme.colors.text.primary,
+              backgroundColor: theme.colors.background.surface,
+            }}
+          />
+        ) : null}
+        <ActionButton label="Save Methodology" onPress={savePlan} />
       </View>
 
       <ActionButton label="Create Budget" onPress={() => navigation.navigate('BudgetEditor', { month })} />
