@@ -31,6 +31,13 @@ const toGoalView = (goal: Goal) => {
   };
 };
 
+const daysUntil = (deadline: string) => {
+  const end = new Date(`${deadline}T00:00:00Z`).getTime();
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+};
+
 const emitGoalMilestones = async (
   userId: string,
   goal: { id: string; title: string; target: number; saved: number },
@@ -199,5 +206,65 @@ export const goalService = {
       throw new HttpError(500, 'GOAL_READ_FAILED', 'Could not load goal');
     }
     return data;
+  },
+
+  async getPrioritizedGoals(userId: string) {
+    const db = requireDb();
+    const { data, error } = await db
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .returns<Goal[]>();
+
+    if (error) {
+      throw new HttpError(500, 'GOAL_PRIORITY_FAILED', 'Could not load goals for prioritization');
+    }
+
+    const active = (data ?? [])
+      .map(toGoalView)
+      .filter((goal) => !goal.isCompleted && goal.remainingAmount > 0);
+
+    const prioritized = active
+      .map((goal) => {
+        const daysRemaining = daysUntil(goal.deadline);
+        const urgencyScore =
+          daysRemaining <= 0 ? 100 : daysRemaining <= 30 ? 85 : daysRemaining <= 90 ? 65 : 40;
+        const progressPenalty = Math.max(0, 100 - goal.progressPercent);
+        const remainingWeight = Math.min(goal.remainingAmount / Math.max(goal.targetAmount, 1), 1) * 100;
+        const score = urgencyScore * 0.5 + progressPenalty * 0.3 + remainingWeight * 0.2;
+
+        const priority = score >= 75 ? 'high' : score >= 55 ? 'medium' : 'low';
+        const suggestedMonthlyContribution =
+          daysRemaining > 0
+            ? Math.max(goal.remainingAmount / Math.max(Math.ceil(daysRemaining / 30), 1), 0)
+            : goal.remainingAmount;
+
+        let reason = 'Balanced timeline and progress';
+        if (daysRemaining <= 0) reason = 'Deadline passed and remaining amount is pending';
+        else if (daysRemaining <= 30) reason = 'Deadline is close';
+        else if (goal.progressPercent < 35) reason = 'Low progress compared to target';
+
+        return {
+          goalId: goal.id,
+          title: goal.title,
+          deadline: goal.deadline,
+          daysRemaining,
+          progressPercent: goal.progressPercent,
+          remainingAmount: goal.remainingAmount,
+          targetAmount: goal.targetAmount,
+          suggestedMonthlyContribution: Number(suggestedMonthlyContribution.toFixed(2)),
+          priority,
+          priorityScore: Number(score.toFixed(2)),
+          reason,
+        };
+      })
+      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .map((item, index) => ({ ...item, rank: index + 1 }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      focusGoal: prioritized[0] ?? null,
+      goals: prioritized,
+    };
   },
 };

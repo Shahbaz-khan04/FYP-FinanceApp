@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { GoalItem, GoalPayload } from '../types/goal';
+import type { GoalItem, GoalPayload, GoalPrioritySummary } from '../types/goal';
 
 export const goalApi = {
   async list(token: string) {
@@ -42,5 +42,12 @@ export const goalApi = {
       token,
     });
   },
-};
 
+  async priorities(token: string) {
+    const response = await apiClient<{ data: GoalPrioritySummary; error: null }>('/goals/priorities', {
+      method: 'GET',
+      token,
+    });
+    return response.data;
+  },
+};

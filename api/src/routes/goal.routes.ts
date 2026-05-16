@@ -33,6 +33,17 @@ goalRouter.get('/', async (req, res, next) => {
   }
 });
 
+goalRouter.get('/priorities', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+    const data = await goalService.getPrioritizedGoals(userId);
+    res.json({ data, error: null });
+  } catch (error) {
+    next(error);
+  }
+});
+
 goalRouter.post('/', async (req, res, next) => {
   try {
     const userId = req.authUserId;
@@ -78,4 +89,3 @@ goalRouter.delete('/:goalId', async (req, res, next) => {
     next(error);
   }
 });
-

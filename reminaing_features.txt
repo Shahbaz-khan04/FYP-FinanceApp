@@ -59,3 +59,49 @@ Last:
 - **Security claim (“encryption at rest and transit”)**
   - Transit is covered (HTTP stack; JWT), local token secure storage is used
   - Explicit app-level DB encryption-at-rest implementation/config is not shown in this repo (may rely on platform/Supabase defaults)
+
+
+Here are all AI-related features in the app:
+
+AI Expense Categorization
+Automatically categorizes expenses like food, rent, travel, shopping, bills, etc.
+Implemented using NLP/ML model trained on transaction text, merchant name, notes, and past user corrections.
+OCR Receipt Scanning
+User scans a receipt, and the app extracts amount, date, merchant, and items.
+Implemented using OCR Space API, then backend cleans and maps extracted text into transaction fields.
+Smart Receipt Categorization
+After OCR extracts receipt data, AI suggests the correct expense category.
+Implemented by passing OCR text/merchant/items into the same categorization model.
+Cash Flow Forecasting
+Predicts future balance, income, and expenses for upcoming weeks/months.
+Implemented using time-series forecasting based on past income, expenses, recurring bills, and spending trends.
+Spending Anomaly Detection
+Detects unusual spending, like sudden high expenses or abnormal category usage.
+Implemented using rule-based thresholds first, then ML anomaly detection based on user history.
+Personalized Financial Advice
+Gives suggestions like reduce food spending, save more this month, or adjust budgets.
+Implemented using backend rules + AI recommendation logic based on spending patterns and goals.
+Budget Optimization Recommendations
+Suggests how to improve budget allocation across categories.
+Implemented by comparing planned vs actual spending and recommending adjustments.
+Dynamic Budget Adjustment
+Automatically suggests budget changes when income increases or decreases.
+Implemented through rule-based calculations using percentage/envelope/zero-based budgeting logic.
+Goal Prioritization
+Suggests which financial goal should be focused on first.
+Implemented using priority rules such as urgency, deadline, remaining amount, and user savings capacity.
+Smart Expense Splitting Suggestions
+Suggests how to split a transaction into multiple categories.
+Implemented using AI/rules based on receipt items or transaction description.
+Bill / Recurring Expense Prediction
+Predicts upcoming bills like rent, subscriptions, or utilities.
+Implemented by detecting repeated transactions by merchant, amount, and date pattern.
+Business Profit & Loss Insights
+Generates business income/expense summaries and P&L statements.
+Implemented using transaction type, tags, business profile separation, and reporting rules.
+AI-Based Alerts
+Sends alerts for overspending, unusual activity, upcoming bills, and goal milestones.
+Implemented using notification triggers from anomaly detection, budget variance, and recurring transaction logic.
+Learning from User Corrections
+If user changes an AI-selected category, the system improves future suggestions.
+Implemented by storing correction history and using it as feedback for future categorization.

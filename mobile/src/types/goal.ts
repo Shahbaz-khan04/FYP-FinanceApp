@@ -18,3 +18,23 @@ export type GoalPayload = {
   deadline: string;
 };
 
+export type GoalPriorityItem = {
+  rank: number;
+  goalId: string;
+  title: string;
+  deadline: string;
+  daysRemaining: number;
+  progressPercent: number;
+  remainingAmount: number;
+  targetAmount: number;
+  suggestedMonthlyContribution: number;
+  priority: 'high' | 'medium' | 'low';
+  priorityScore: number;
+  reason: string;
+};
+
+export type GoalPrioritySummary = {
+  generatedAt: string;
+  focusGoal: GoalPriorityItem | null;
+  goals: GoalPriorityItem[];
+};

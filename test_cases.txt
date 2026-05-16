@@ -924,3 +924,23 @@ Expected: percent field appears only in Percentage mode.
 F. Regression checksCreate/edit/delete budget still works in all three modes.
 Budget list still shows near-limit/over-budget states.
 Reports budget-vs-actual still load for month.
+
+
+Concise test cases
+Create 3+ active goals with different deadlines/progress.
+Expected: Goals screen shows Focus Goal + Priority Ranking.
+
+Make one goal near deadline with low progress.
+Expected: It moves to rank #1 or higher priority.
+
+Mark the focus goal complete.
+Expected: It disappears from active ranking; next goal becomes focus.
+
+Edit goal saved amount upward significantly.
+Expected: Its priority score drops and ranking updates after refresh.
+
+Open ranked goal item.
+Expected: Navigates to correct Goal Detail screen.
+
+No active goals (all completed or none).
+Expected: no focus/ranking cards, regular empty state remains.
