@@ -37,3 +37,12 @@ export type GoalProgressPoint = {
   deadline: string;
 };
 
+export type StatementArchiveItem = {
+  id: string;
+  periodType: 'weekly' | 'monthly';
+  referenceDate: string;
+  startDate: string;
+  endDate: string;
+  fileName: string;
+  createdAt: string;
+};

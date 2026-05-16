@@ -1,8 +1,9 @@
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { ChartCardWeb } from '../components/ChartCardWeb';
 import { useAuth } from '../context/AuthContext';
 import { formatMoney, getPreferredCurrency } from '../lib/currency';
 import { reportApi } from '../lib/reportApi';
@@ -13,6 +14,7 @@ import type {
   CategorySpendingPoint,
   GoalProgressPoint,
   IncomeExpensePoint,
+  StatementArchiveItem,
   SpendingTrendPoint,
 } from '../types/report';
 import { ActionButton, EmptyState, Screen } from './common';
@@ -38,6 +40,8 @@ export const ReportsScreen = ({ navigation }: Props) => {
   const [spendingTrend, setSpendingTrend] = useState<SpendingTrendPoint[]>([]);
   const [budgetVsActual, setBudgetVsActual] = useState<BudgetVsActualPoint[]>([]);
   const [goalProgress, setGoalProgress] = useState<GoalProgressPoint[]>([]);
+  const [statements, setStatements] = useState<StatementArchiveItem[]>([]);
+  const [isGeneratingStatement, setIsGeneratingStatement] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -56,10 +60,57 @@ export const ReportsScreen = ({ navigation }: Props) => {
       setSpendingTrend(trendData);
       setBudgetVsActual(budgetData);
       setGoalProgress(goalData);
+      setStatements(await reportApi.listStatements(token));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     }
   }, [token, startDate, endDate, granularity]);
+
+  const generateStatement = useCallback(
+    async (periodType: 'weekly' | 'monthly') => {
+      if (!token) return;
+      try {
+        setIsGeneratingStatement(true);
+        setError('');
+        await reportApi.generateStatement(token, {
+          periodType,
+          referenceDate: endDate,
+        });
+        setStatements(await reportApi.listStatements(token));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to generate statement');
+      } finally {
+        setIsGeneratingStatement(false);
+      }
+    },
+    [token, endDate],
+  );
+
+  const downloadStatement = useCallback(
+    async (statementId: string) => {
+      if (!token) return;
+      try {
+        setError('');
+        const { fileName, csvText } = await reportApi.downloadStatementCsv(token, statementId);
+        if (Platform.OS === 'web') {
+          const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        } else {
+          setError('CSV download is currently supported on web. Use web for file download.');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to download statement');
+      }
+    },
+    [token],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -77,6 +128,57 @@ export const ReportsScreen = ({ navigation }: Props) => {
   );
   const maxTrend = useMemo(() => Math.max(...spendingTrend.map((i) => i.amount), 1), [spendingTrend]);
   const maxBudget = useMemo(() => Math.max(...budgetVsActual.map((i) => Math.max(i.planned, i.actual)), 1), [budgetVsActual]);
+
+  const incomeExpenseChartData = useMemo(
+    () => ({
+      labels: incomeExpenses.map((x) => x.month),
+      datasets: [
+        {
+          label: 'Income',
+          data: incomeExpenses.map((x) => x.income),
+          backgroundColor: '#16A34A',
+        },
+        {
+          label: 'Expenses',
+          data: incomeExpenses.map((x) => x.expenses),
+          backgroundColor: '#DC2626',
+        },
+      ],
+    }),
+    [incomeExpenses],
+  );
+
+  const categoryChartData = useMemo(
+    () => ({
+      labels: categorySpending.map((x) => x.category),
+      datasets: [
+        {
+          label: 'Spending',
+          data: categorySpending.map((x) => x.amount),
+          backgroundColor: categorySpending.map((x) => x.color),
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [categorySpending],
+  );
+
+  const trendChartData = useMemo(
+    () => ({
+      labels: spendingTrend.map((x) => x.period),
+      datasets: [
+        {
+          label: 'Spending',
+          data: spendingTrend.map((x) => x.amount),
+          borderColor: '#0EA5E9',
+          backgroundColor: 'rgba(14, 165, 233, 0.2)',
+          fill: true,
+          tension: 0.25,
+        },
+      ],
+    }),
+    [spendingTrend],
+  );
 
   return (
     <Screen>
@@ -147,6 +249,82 @@ export const ReportsScreen = ({ navigation }: Props) => {
           </Pressable>
         </View>
         <ActionButton label="Apply Range" onPress={load} />
+        <View
+          style={{
+            marginTop: theme.spacing[3],
+            backgroundColor: theme.colors.background.surface,
+            borderRadius: theme.radius.md,
+            padding: theme.spacing[3],
+          }}
+        >
+          <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>
+            Statements (Weekly / Monthly)
+          </Text>
+          <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
+            Generate archival CSV statements and download from history.
+          </Text>
+          <ActionButton
+            label={isGeneratingStatement ? 'Generating...' : 'Generate Weekly Statement'}
+            onPress={() => generateStatement('weekly')}
+            disabled={isGeneratingStatement}
+          />
+          <ActionButton
+            label={isGeneratingStatement ? 'Generating...' : 'Generate Monthly Statement'}
+            onPress={() => generateStatement('monthly')}
+            variant="secondary"
+            disabled={isGeneratingStatement}
+          />
+          {statements.slice(0, 8).map((item) => (
+            <View
+              key={item.id}
+              style={{
+                marginTop: theme.spacing[2],
+                borderWidth: 1,
+                borderColor: theme.colors.border.subtle,
+                borderRadius: theme.radius.md,
+                padding: theme.spacing[2],
+                backgroundColor: theme.colors.background.surfaceRaised,
+              }}
+            >
+              <Text style={{ color: theme.colors.text.primary }}>
+                {item.periodType.toUpperCase()} • {item.startDate} to {item.endDate}
+              </Text>
+              <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted }}>
+                {item.fileName}
+              </Text>
+              <ActionButton
+                label="Download CSV"
+                onPress={() => downloadStatement(item.id)}
+                variant="secondary"
+              />
+            </View>
+          ))}
+        </View>
+
+        <ChartCardWeb
+          kind="bar"
+          title="Monthly Income vs Expenses (Chart.js)"
+          data={incomeExpenseChartData}
+          options={{
+            plugins: { legend: { position: 'top' } },
+          }}
+        />
+        <ChartCardWeb
+          kind="doughnut"
+          title="Category-wise Spending (Chart.js)"
+          data={categoryChartData}
+          options={{
+            plugins: { legend: { position: 'bottom' } },
+          }}
+        />
+        <ChartCardWeb
+          kind="line"
+          title={`Spending Trend ${granularity === 'daily' ? '(Daily)' : '(Weekly)'} (Chart.js)`}
+          data={trendChartData}
+          options={{
+            plugins: { legend: { display: true } },
+          }}
+        />
 
         <View style={{ marginTop: theme.spacing[3], backgroundColor: theme.colors.background.surface, borderRadius: theme.radius.md, padding: theme.spacing[3] }}>
           <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>Monthly Income vs Expenses</Text>

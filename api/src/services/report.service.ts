@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabase.js';
+import { randomUUID } from 'node:crypto';
 import { currencyService } from './currency.service.js';
 import { HttpError } from '../utils/httpError.js';
 
@@ -31,6 +32,30 @@ const weekLabel = (dateStr: string) => {
   const days = Math.floor((d.getTime() - first.getTime()) / 86400000);
   const week = Math.ceil((days + first.getUTCDay() + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+};
+
+const startOfWeekUtc = (d: Date) => {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayOfWeek = date.getUTCDay(); // 0 Sun .. 6 Sat
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday start
+  date.setUTCDate(date.getUTCDate() + diff);
+  return date;
+};
+
+const endOfWeekUtc = (d: Date) => {
+  const start = startOfWeekUtc(d);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return end;
+};
+
+const startOfMonthUtc = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+const endOfMonthUtc = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
+
+const csvEscape = (value: unknown) => {
+  const text = String(value ?? '');
+  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
 };
 
 export const reportService = {
@@ -224,5 +249,153 @@ export const reportService = {
         deadline: goal.deadline,
       };
     });
+  },
+
+  async generateStatement(
+    userId: string,
+    periodType: 'weekly' | 'monthly',
+    referenceDate?: string,
+  ) {
+    const db = requireDb();
+    const ref = referenceDate ? new Date(`${referenceDate}T00:00:00Z`) : new Date();
+    if (Number.isNaN(ref.getTime())) {
+      throw new HttpError(400, 'INVALID_REFERENCE_DATE', 'Reference date is invalid');
+    }
+
+    const start = periodType === 'weekly' ? startOfWeekUtc(ref) : startOfMonthUtc(ref);
+    const end = periodType === 'weekly' ? endOfWeekUtc(ref) : endOfMonthUtc(ref);
+    const startDate = day(start);
+    const endDate = day(end);
+
+    const { preferredCurrency, ratesBase, rates } = await currencyService.getRatesForUser(userId);
+    const { data, error } = await db
+      .from('transactions')
+      .select('date,type,amount,currency,payment_method,notes,categories(name)')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error) throw new HttpError(500, 'STATEMENT_GENERATION_FAILED', 'Could not generate statement');
+
+    const rows = data ?? [];
+    let income = 0;
+    let expenses = 0;
+    for (const row of rows as any[]) {
+      const amount = currencyService.convertAmount(
+        Number(row.amount),
+        row.currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
+      if (row.type === 'income') income += amount;
+      else expenses += amount;
+    }
+    const net = income - expenses;
+
+    const header = [
+      ['Statement Type', periodType.toUpperCase()],
+      ['Reference Date', day(ref)],
+      ['Range Start', startDate],
+      ['Range End', endDate],
+      ['Currency', preferredCurrency],
+      ['Total Income', income.toFixed(2)],
+      ['Total Expenses', expenses.toFixed(2)],
+      ['Net', net.toFixed(2)],
+      [],
+      ['Date', 'Type', 'Category', 'Amount', 'Payment Method', 'Notes'],
+    ];
+
+    const body = (rows as any[]).map((row) => {
+      const converted = currencyService.convertAmount(
+        Number(row.amount),
+        row.currency,
+        preferredCurrency,
+        ratesBase,
+        rates,
+      );
+      const category = Array.isArray(row.categories) ? row.categories[0]?.name : row.categories?.name;
+      return [
+        row.date,
+        row.type,
+        category ?? 'Uncategorized',
+        converted.toFixed(2),
+        row.payment_method ?? '',
+        row.notes ?? '',
+      ];
+    });
+
+    const csv = [...header, ...body]
+      .map((line) => line.map((cell) => csvEscape(cell)).join(','))
+      .join('\n');
+
+    const fileName = `statement_${periodType}_${startDate}_to_${endDate}.csv`;
+    const { data: saved, error: saveError } = await db
+      .from('statement_exports')
+      .insert({
+        id: randomUUID(),
+        user_id: userId,
+        period_type: periodType,
+        reference_date: day(ref),
+        start_date: startDate,
+        end_date: endDate,
+        file_name: fileName,
+        csv_content: csv,
+        created_at: new Date().toISOString(),
+      })
+      .select('id,period_type,reference_date,start_date,end_date,file_name,created_at')
+      .single();
+    if (saveError || !saved) {
+      throw new HttpError(500, 'STATEMENT_ARCHIVE_FAILED', 'Could not archive generated statement');
+    }
+
+    return {
+      id: saved.id,
+      periodType: saved.period_type,
+      referenceDate: saved.reference_date,
+      startDate: saved.start_date,
+      endDate: saved.end_date,
+      fileName: saved.file_name,
+      createdAt: saved.created_at,
+    };
+  },
+
+  async listStatements(userId: string) {
+    const db = requireDb();
+    const { data, error } = await db
+      .from('statement_exports')
+      .select('id,period_type,reference_date,start_date,end_date,file_name,created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw new HttpError(500, 'STATEMENT_LIST_FAILED', 'Could not load statement history');
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      periodType: row.period_type,
+      referenceDate: row.reference_date,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      fileName: row.file_name,
+      createdAt: row.created_at,
+    }));
+  },
+
+  async getStatementCsv(userId: string, statementId: string) {
+    const db = requireDb();
+    const { data, error } = await db
+      .from('statement_exports')
+      .select('id,file_name,csv_content')
+      .eq('id', statementId)
+      .eq('user_id', userId)
+      .maybeSingle<{ id: string; file_name: string; csv_content: string }>();
+    if (error) throw new HttpError(500, 'STATEMENT_READ_FAILED', 'Could not read statement');
+    if (!data) throw new HttpError(404, 'STATEMENT_NOT_FOUND', 'Statement not found');
+    return {
+      id: data.id,
+      fileName: data.file_name,
+      csvContent: data.csv_content,
+    };
   },
 };

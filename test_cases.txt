@@ -944,3 +944,44 @@ Expected: Navigates to correct Goal Detail screen.
 
 No active goals (all completed or none).
 Expected: no focus/ranking cards, regular empty state remains.
+
+
+Concise test cases
+Open Reports screen on web (npm run web).
+Expected: three sections labeled with (Chart.js) render interactive charts.
+
+Change date range and click Apply Range.
+Expected: all three Chart.js charts update with new data.
+
+Toggle Daily/Weekly and apply.
+Expected: Spending Trend Chart.js line chart labels/data change accordingly.
+
+Use dataset with no category spending.
+Expected: no crash; chart area still renders safely (possibly empty).
+
+Run app on native (Android/iOS).
+Expected: no crash from Chart.js imports; non-web UI still works.
+
+Hover a chart point/bar on web.
+Expected: Chart.js tooltip and legend interactivity works.
+
+Concise test cases
+Open Reports screen and click Generate Weekly Statement.
+Expected: new archive item appears with weekly range and filename.
+
+Click Generate Monthly Statement.
+Expected: new archive item appears with monthly range and filename.
+
+Refresh Reports screen.
+Expected: previously generated statements persist in history (archival works).
+
+Click Download CSV on web.
+Expected: .csv file downloads; filename matches item.
+
+Open downloaded CSV.
+Expected:
+
+header section with totals and date range
+transaction rows with date/type/category/amount/payment method/notes
+Try with no transactions in selected period.
+Expected: statement still generated with zero totals and valid CSV structure.

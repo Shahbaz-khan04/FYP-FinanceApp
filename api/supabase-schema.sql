@@ -268,3 +268,17 @@ create table if not exists public.app_notifications (
 create index if not exists idx_notifications_user_created on public.app_notifications(user_id, created_at desc);
 create index if not exists idx_notifications_user_read on public.app_notifications(user_id, is_read, is_dismissed);
 create unique index if not exists idx_notifications_user_dedupe on public.app_notifications(user_id, dedupe_key) where dedupe_key is not null;
+
+create table if not exists public.statement_exports (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  period_type text not null check (period_type in ('weekly', 'monthly')),
+  reference_date date not null,
+  start_date date not null,
+  end_date date not null,
+  file_name text not null,
+  csv_content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_statement_exports_user_created on public.statement_exports(user_id, created_at desc);
