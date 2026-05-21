@@ -14,13 +14,13 @@ export const notificationsApi = {
     return response.data;
   },
 
-  async generate(token: string, month?: string) {
-    const response = await apiClient<{ data: { generated: number }; error: null }>(
+  async generate(token: string, month?: string, withPush = false) {
+    const response = await apiClient<{ data: { generated: number; push?: { sent: number; tokens: number } }; error: null }>(
       '/notifications/generate',
       {
         method: 'POST',
         token,
-        body: JSON.stringify(month ? { month } : {}),
+        body: JSON.stringify({ ...(month ? { month } : {}), withPush }),
       },
     );
     return response.data;
@@ -32,5 +32,17 @@ export const notificationsApi = {
 
   async dismiss(token: string, notificationId: string) {
     await apiClient(`/notifications/${notificationId}/dismiss`, { method: 'POST', token });
+  },
+
+  async registerPushToken(
+    token: string,
+    payload: { expoPushToken: string; platform: 'ios' | 'android'; deviceName?: string },
+  ) {
+    const response = await apiClient<{ data: { ok: boolean }; error: null }>('/notifications/push-token', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(payload),
+    });
+    return response.data;
   },
 };

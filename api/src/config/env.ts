@@ -24,6 +24,9 @@ const envSchema = z.object({
   EXCHANGE_RATE_API_KEY: z.string().optional(),
   EXCHANGE_RATE_API_BASE_URL: z.string().url().default('https://v6.exchangerate-api.com/v6'),
   GOOGLE_CLIENT_IDS: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4.1-mini'),
+  PUSH_JOB_TOKEN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

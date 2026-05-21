@@ -1,12 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Image, ScrollView, Text, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { receiptApi } from '../lib/receiptApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { theme } from '../theme';
-import { ActionButton, Screen } from './common';
+import { Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReceiptScan'>;
 
@@ -19,11 +19,7 @@ export const ReceiptScanScreen = ({ navigation }: Props) => {
   const [error, setError] = useState('');
 
   const pickFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      base64: true,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7, base64: true });
     if (result.canceled) return;
     const asset = result.assets[0];
     if (!asset?.base64) {
@@ -43,10 +39,7 @@ export const ReceiptScanScreen = ({ navigation }: Props) => {
       setError('Camera permission is required');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.7,
-      base64: true,
-    });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: true });
     if (result.canceled) return;
     const asset = result.assets[0];
     if (!asset?.base64) {
@@ -66,7 +59,6 @@ export const ReceiptScanScreen = ({ navigation }: Props) => {
       setError('Select an image or provide image URL');
       return;
     }
-
     try {
       setLoading(true);
       setError('');
@@ -84,24 +76,35 @@ export const ReceiptScanScreen = ({ navigation }: Props) => {
 
   return (
     <Screen>
-      <ScrollView>
-        <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary }}>
-          Upload from gallery/camera or paste a public image URL.
-        </Text>
-        {previewUri ? (
-          <Image
-            source={{ uri: previewUri }}
-            style={{
-              width: '100%',
-              height: 240,
-              borderRadius: theme.radius.md,
-              marginTop: theme.spacing[3],
-            }}
-            resizeMode="cover"
-          />
-        ) : null}
-        <ActionButton label="Choose from Gallery" onPress={pickFromGallery} />
-        <ActionButton label="Capture with Camera" onPress={pickFromCamera} variant="secondary" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <Ionicons name="arrow-back" size={16} color="#c6d5df" />
+          </Pressable>
+          <Text style={styles.headerTitle}>MoneyLens</Text>
+          <Pressable onPress={() => navigation.navigate('Profile')} style={styles.iconBtn}>
+            <Ionicons name="person-circle-outline" size={16} color="#c6d5df" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.sectionTitle}>Scan Receipt</Text>
+        <Text style={styles.helper}>Upload a receipt image from gallery/camera or URL.</Text>
+
+        <View style={styles.previewWrap}>
+          {previewUri ? <Image source={{ uri: previewUri }} style={styles.previewImage} resizeMode="cover" /> : <Ionicons name="receipt-outline" size={44} color="#4f606f" />}
+        </View>
+
+        <View style={styles.row}>
+          <Pressable style={styles.slimBtn} onPress={pickFromGallery}>
+            <Ionicons name="images-outline" size={14} color="#17dff8" />
+            <Text style={styles.slimBtnText}>Gallery</Text>
+          </Pressable>
+          <Pressable style={styles.slimBtn} onPress={pickFromCamera}>
+            <Ionicons name="camera-outline" size={14} color="#17dff8" />
+            <Text style={styles.slimBtnText}>Camera</Text>
+          </Pressable>
+        </View>
+
         <TextInput
           value={imageUrl}
           onChangeText={(value) => {
@@ -109,24 +112,94 @@ export const ReceiptScanScreen = ({ navigation }: Props) => {
             if (value.trim()) setImageBase64('');
           }}
           placeholder="Or paste receipt image URL"
-          placeholderTextColor={theme.colors.text.muted}
+          placeholderTextColor="#748692"
           autoCapitalize="none"
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
+          style={styles.input}
         />
 
-        {loading ? <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>Running OCR...</Text> : null}
-        {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
-        <ActionButton label="Scan Receipt" onPress={scan} />
+        {loading ? <Text style={styles.helper}>Running OCR...</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Pressable style={styles.primaryBtn} onPress={scan} disabled={loading}>
+          <Ionicons name="scan-outline" size={14} color="#063742" />
+          <Text style={styles.primaryBtnText}>{loading ? 'Scanning...' : 'Scan Receipt'}</Text>
+        </Pressable>
       </ScrollView>
     </Screen>
   );
 };
+
+const styles = StyleSheet.create({
+  content: { paddingBottom: 8 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(154,170,184,0.2)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(12, 19, 33, 0.78)',
+  },
+  iconBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { color: '#15def8', fontSize: 20, fontWeight: '800' },
+  sectionTitle: { color: '#dbe3ea', fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  helper: { color: '#8a99a5', fontSize: 14, fontWeight: '500', marginBottom: 8 },
+  previewWrap: {
+    borderWidth: 1,
+    borderColor: 'rgba(154,170,184,0.24)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(17,25,39,0.82)',
+    minHeight: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  previewImage: { width: '100%', height: 220 },
+  row: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  slimBtn: {
+    flex: 1,
+    minHeight: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(154,170,184,0.22)',
+    backgroundColor: 'rgba(17,25,39,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  slimBtnText: { color: '#c6d5df', fontSize: 14, fontWeight: '700' },
+  input: {
+    minHeight: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(154,170,184,0.2)',
+    backgroundColor: 'rgba(17,25,39,0.82)',
+    color: '#d5dfe7',
+    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: '#1bdcf7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  primaryBtnText: { color: '#063742', fontSize: 18, fontWeight: '800' },
+  error: { color: '#ff8089', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+});

@@ -985,3 +985,23 @@ header section with totals and date range
 transaction rows with date/type/category/amount/payment method/notes
 Try with no transactions in selected period.
 Expected: statement still generated with zero totals and valid CSV structure.
+
+Concise test cases
+Open Recommendations screen.
+Expected: “AI Personalized Advice” block appears with model/source/summary and action items.
+
+Hit POST /recommendations/ai twice for same month.
+Expected: first run source=fresh, next run source=cache.
+
+Login on physical mobile device (notifications enabled).
+Expected: app registers push token via /notifications/push-token (no visible error).
+
+Trigger POST /notifications/generate with withPush=true.
+Expected: returns generated count and push dispatch stats.
+
+Create anomaly/overspending condition then refresh notifications.
+Expected: in-app notification includes AI-advice-style alert, and push is dispatched to registered tokens.
+
+Call job endpoint:
+POST /jobs/notifications/dispatch-all with header x-job-token.
+Expected: generates and dispatches successfully for the specified user

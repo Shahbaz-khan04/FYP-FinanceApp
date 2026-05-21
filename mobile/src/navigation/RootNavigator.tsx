@@ -107,12 +107,15 @@ export const RootNavigator = () => {
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: theme.colors.background.surface },
+          headerShown: false,
+          headerStyle: { backgroundColor: theme.colors.background.app },
           headerTintColor: theme.colors.text.primary,
           contentStyle: { backgroundColor: theme.colors.background.app },
+          headerShadowVisible: false,
           headerTitleStyle: {
             fontFamily: theme.typography.title2.fontFamily,
             fontSize: 18,
+            color: theme.colors.text.primary,
           },
         }}
       >

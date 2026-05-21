@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { recommendationApi } from '../lib/recommendationApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
-import type { RecommendationItem, RecommendationSummary } from '../types/recommendation';
+import type { AiRecommendationSummary, RecommendationItem, RecommendationSummary } from '../types/recommendation';
 import { ActionButton, Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Recommendations'>;
@@ -28,13 +28,16 @@ export const RecommendationsScreen = (_props: Props) => {
   const { token } = useAuth();
   const [month, setMonth] = useState(currentMonth());
   const [summary, setSummary] = useState<RecommendationSummary | null>(null);
+  const [aiSummary, setAiSummary] = useState<AiRecommendationSummary | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
       setError('');
-      setSummary(await recommendationApi.get(token, month));
+      const [rules, ai] = await Promise.all([recommendationApi.get(token, month), recommendationApi.getAi(token, month)]);
+      setSummary(rules);
+      setAiSummary(ai);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load recommendations');
     }
@@ -65,6 +68,48 @@ export const RecommendationsScreen = (_props: Props) => {
 
         {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
         <ActionButton label="Refresh" onPress={load} />
+
+        {aiSummary ? (
+          <View
+            style={{
+              marginTop: theme.spacing[2],
+              backgroundColor: theme.colors.background.surface,
+              borderRadius: theme.radius.md,
+              borderWidth: 1,
+              borderColor: theme.colors.brand.secondary,
+              padding: theme.spacing[3],
+            }}
+          >
+            <Text style={{ ...theme.typography.label, color: theme.colors.text.primary }}>AI Personalized Advice</Text>
+            <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+              {aiSummary.model} • {aiSummary.source.toUpperCase()} • {aiSummary.generatedAt.slice(0, 16).replace('T', ' ')}
+            </Text>
+            <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>
+              {aiSummary.summary}
+            </Text>
+            {aiSummary.recommendations.map((item, index) => (
+              <View
+                key={`${item.title}-${index}`}
+                style={{
+                  marginTop: theme.spacing[2],
+                  borderWidth: 1,
+                  borderColor: priorityColor(item.priority),
+                  borderRadius: theme.radius.md,
+                  padding: theme.spacing[2],
+                  backgroundColor: theme.colors.background.surfaceRaised,
+                }}
+              >
+                <Text style={{ color: theme.colors.text.primary }}>{item.title}</Text>
+                <Text style={{ ...theme.typography.bodySmall, color: theme.colors.text.secondary, marginTop: theme.spacing[1] }}>
+                  {item.message}
+                </Text>
+                <Text style={{ ...theme.typography.caption, color: theme.colors.text.muted, marginTop: theme.spacing[1] }}>
+                  Action: {item.action}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <View style={{ marginTop: theme.spacing[2] }}>
           {(summary?.recommendations ?? []).map((item) => (

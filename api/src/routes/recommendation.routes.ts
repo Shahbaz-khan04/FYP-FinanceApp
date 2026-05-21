@@ -22,3 +22,15 @@ recommendationRouter.get('/', async (req, res, next) => {
     next(error);
   }
 });
+
+recommendationRouter.get('/ai', async (req, res, next) => {
+  try {
+    const userId = req.authUserId;
+    if (!userId) throw new HttpError(401, 'UNAUTHORIZED', 'Unauthorized');
+    const query = querySchema.parse(req.query);
+    const data = await recommendationService.getAiRecommendations(userId, query.month);
+    res.json({ data, error: null });
+  } catch (error) {
+    next(error);
+  }
+});

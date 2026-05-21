@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import {
   createContext,
@@ -43,6 +44,27 @@ export const NotificationProvider = ({ children }: PropsWithChildren) => {
     await Notifications.requestPermissionsAsync();
   }, [user?.settings.notificationsEnabled]);
 
+  const registerPushToken = useCallback(async () => {
+    if (!token || Platform.OS === 'web') return;
+    if (!user?.settings.notificationsEnabled) return;
+    try {
+      const projectId =
+        (Constants.expoConfig?.extra as any)?.eas?.projectId ??
+        (Constants as any).easConfig?.projectId;
+      if (!projectId) return;
+      const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+      const raw = pushToken.data;
+      if (!raw) return;
+      await notificationsApi.registerPushToken(token, {
+        expoPushToken: raw,
+        platform: Platform.OS === 'ios' ? 'ios' : 'android',
+        deviceName: Constants.deviceName ?? undefined,
+      });
+    } catch {
+      // Keep app flow non-blocking if push registration fails.
+    }
+  }, [token, user?.settings.notificationsEnabled]);
+
   const pushLocalForNew = useCallback(
     async (items: Array<{ id: string; title: string; message: string }>) => {
       if (Platform.OS === 'web') return;
@@ -71,7 +93,7 @@ export const NotificationProvider = ({ children }: PropsWithChildren) => {
       return;
     }
 
-    await notificationsApi.generate(token);
+    await notificationsApi.generate(token, undefined, Platform.OS !== 'web');
     const unread = await notificationsApi.list(token, false);
     setUnreadCount(unread.length);
     if (user?.settings.notificationsEnabled) {
@@ -82,6 +104,10 @@ export const NotificationProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     requestPermission();
   }, [requestPermission]);
+
+  useEffect(() => {
+    registerPushToken();
+  }, [registerPushToken]);
 
   useEffect(() => {
     refreshNotifications();

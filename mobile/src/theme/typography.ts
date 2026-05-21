@@ -9,8 +9,8 @@ export const fontFamily = {
 export const typography = {
   display: {
     fontFamily: fontFamily.headline,
-    fontSize: 44,
-    lineHeight: 52,
+    fontSize: 46,
+    lineHeight: 54,
   },
   title1: {
     fontFamily: fontFamily.headline,
@@ -19,8 +19,8 @@ export const typography = {
   },
   title2: {
     fontFamily: fontFamily.headlineMedium,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 30,
   },
   body: {
     fontFamily: fontFamily.body,

@@ -1,16 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useNetInfo } from '@react-native-community/netinfo';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { useAuth } from '../context/AuthContext';
 import { getPreferredCurrency } from '../lib/currency';
 import { offlineTransactions } from '../lib/offlineTransactions';
 import { transactionsApi } from '../lib/transactionsApi';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { theme } from '../theme';
 import type { Category, TransactionType } from '../types/transaction';
-import { ActionButton, Screen } from './common';
+import { Screen } from './common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TransactionDetail'>;
 
@@ -20,6 +20,7 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
   const netInfo = useNetInfo();
   const isOnline = Boolean(netInfo.isConnected);
   const { transaction } = route.params;
+
   const [amount, setAmount] = useState(String(transaction.amount));
   const [type, setType] = useState<TransactionType>(transaction.type);
   const [date, setDate] = useState(transaction.date);
@@ -43,18 +44,10 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
   const onSave = async () => {
     if (!token) return;
     const amountValue = Number(amount);
-    if (!Number.isFinite(amountValue) || amountValue <= 0) {
-      setError('Enter a valid amount greater than 0');
-      return;
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      setError('Use date format YYYY-MM-DD');
-      return;
-    }
-    if (!paymentMethod.trim()) {
-      setError('Payment method is required');
-      return;
-    }
+    if (!Number.isFinite(amountValue) || amountValue <= 0) return setError('Enter a valid amount greater than 0');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Use date format YYYY-MM-DD');
+    if (!paymentMethod.trim()) return setError('Payment method is required');
+
     try {
       setIsSaving(true);
       setError('');
@@ -66,16 +59,11 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
         currency: preferredCurrency,
         paymentMethod,
         notes: notes || null,
-        tags: tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+        tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
       };
       const categoryName = categories.find((c) => c.id === payload.categoryId)?.name ?? null;
       await offlineTransactions.updateLocal(transaction.id, payload, categoryName);
-      if (isOnline) {
-        await offlineTransactions.sync(token);
-      }
+      if (isOnline) await offlineTransactions.sync(token);
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update');
@@ -89,9 +77,7 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
     try {
       setError('');
       await offlineTransactions.deleteLocal(transaction.id);
-      if (isOnline) {
-        await offlineTransactions.sync(token);
-      }
+      if (isOnline) await offlineTransactions.sync(token);
       navigation.goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
@@ -100,157 +86,132 @@ export const TransactionDetailScreen = ({ route, navigation }: Props) => {
 
   return (
     <Screen>
-      <ScrollView>
-        <TextInput
-          value={amount}
-          onChangeText={setAmount}
-          placeholder="Amount"
-          keyboardType="decimal-pad"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
-        <View style={{ flexDirection: 'row', gap: theme.spacing[2], marginTop: theme.spacing[2] }}>
-          <Pressable
-            onPress={() => setType('income')}
-            style={{
-              backgroundColor: type === 'income' ? theme.colors.brand.primary : theme.colors.background.surface,
-              paddingVertical: theme.spacing[2],
-              paddingHorizontal: theme.spacing[3],
-              borderRadius: theme.radius.md,
-            }}
-          >
-            <Text style={{ color: type === 'income' ? theme.colors.text.inverse : theme.colors.text.primary }}>
-              Income
-            </Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <Ionicons name="arrow-back" size={16} color="#c6d5df" />
           </Pressable>
-          <Pressable
-            onPress={() => setType('expense')}
-            style={{
-              backgroundColor: type === 'expense' ? theme.colors.brand.tertiary : theme.colors.background.surface,
-              paddingVertical: theme.spacing[2],
-              paddingHorizontal: theme.spacing[3],
-              borderRadius: theme.radius.md,
-            }}
-          >
-            <Text style={{ color: theme.colors.text.inverse }}>Expense</Text>
+          <Text style={styles.headerTitle}>MoneyLens</Text>
+          <Pressable style={styles.iconBtn}>
+            <Ionicons name="share-social-outline" size={16} color="#c6d5df" />
           </Pressable>
         </View>
-        <TextInput
-          value={date}
-          onChangeText={setDate}
-          placeholder="Date (YYYY-MM-DD)"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
-        <Text style={{ color: theme.colors.text.secondary, marginTop: theme.spacing[2] }}>
-          Currency: {preferredCurrency}
-        </Text>
-        <TextInput
-          value={paymentMethod}
-          onChangeText={setPaymentMethod}
-          placeholder="Payment Method"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: theme.spacing[2] }}>
-          <View style={{ flexDirection: 'row', gap: theme.spacing[2] }}>
-            <Pressable
-              onPress={() => setCategoryId('')}
-              style={{
-                backgroundColor: categoryId ? theme.colors.background.surface : theme.colors.brand.secondary,
-                paddingVertical: theme.spacing[2],
-                paddingHorizontal: theme.spacing[3],
-                borderRadius: theme.radius.pill,
-              }}
-            >
-              <Text style={{ color: theme.colors.text.primary }}>No Category</Text>
-            </Pressable>
-            {categories.map((category) => (
-              <Pressable
-                key={category.id}
-                onPress={() => setCategoryId(category.id)}
-                style={{
-                  backgroundColor:
-                    categoryId === category.id ? theme.colors.brand.secondary : theme.colors.background.surface,
-                  paddingVertical: theme.spacing[2],
-                  paddingHorizontal: theme.spacing[3],
-                  borderRadius: theme.radius.pill,
-                  borderWidth: 1,
-                  borderColor: category.color,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing[1] }}>
-                  <CategoryIcon icon={category.icon} color={category.color} />
-                  <Text style={{ color: theme.colors.text.primary }}>{category.name}</Text>
-                </View>
+
+        <View style={styles.heroWrap}>
+          <Text style={styles.statusPill}>CONFIRMED</Text>
+          <Text style={styles.heroAmount}>{`${type === 'expense' ? '-' : '+'}${preferredCurrency} ${amount || '0.00'}`}</Text>
+          <Text style={styles.heroTitle}>{notes || transaction.categoryName || 'Transaction'}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 42, marginBottom: 8 }}>
+            <View style={styles.chipsRow}>
+              <Pressable onPress={() => setCategoryId('')} style={[styles.chip, !categoryId && styles.chipActive]}>
+                <Text style={[styles.chipText, !categoryId && styles.chipTextActive]}>No Category</Text>
               </Pressable>
-            ))}
+              {categories.map((category) => (
+                <Pressable key={category.id} onPress={() => setCategoryId(category.id)} style={[styles.chip, categoryId === category.id && styles.chipActive]}>
+                  <View style={styles.chipInner}>
+                    <CategoryIcon icon={category.icon} color={categoryId === category.id ? '#17dff8' : '#95a6b2'} />
+                    <Text style={[styles.chipText, categoryId === category.id && styles.chipTextActive]}>{category.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View style={styles.typeRow}>
+            <Pressable onPress={() => setType('expense')} style={[styles.typeBtn, type === 'expense' && styles.typeBtnActive]}>
+              <Text style={[styles.typeText, type === 'expense' && styles.typeTextActive]}>Expense</Text>
+            </Pressable>
+            <Pressable onPress={() => setType('income')} style={[styles.typeBtn, type === 'income' && styles.typeBtnActive]}>
+              <Text style={[styles.typeText, type === 'income' && styles.typeTextActive]}>Income</Text>
+            </Pressable>
           </View>
-        </ScrollView>
-        <TextInput
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Notes"
-          placeholderTextColor={theme.colors.text.muted}
-          multiline
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-            minHeight: 80,
-          }}
-        />
-        <TextInput
-          value={tags}
-          onChangeText={setTags}
-          placeholder="Tags (comma separated)"
-          placeholderTextColor={theme.colors.text.muted}
-          style={{
-            marginTop: theme.spacing[2],
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            borderRadius: theme.radius.md,
-            paddingHorizontal: theme.spacing[3],
-            paddingVertical: theme.spacing[2],
-            color: theme.colors.text.primary,
-            backgroundColor: theme.colors.background.surface,
-          }}
-        />
-        {error ? <Text style={{ color: theme.colors.state.danger, marginTop: theme.spacing[2] }}>{error}</Text> : null}
-        <ActionButton label={isSaving ? 'Saving...' : 'Save changes'} onPress={onSave} disabled={isSaving} />
-        <ActionButton label="Delete transaction" onPress={onDelete} variant="secondary" />
+
+          <View style={styles.gridRow}>
+            <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="Amount" placeholderTextColor="#70808c" style={styles.input} />
+            <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor="#70808c" style={styles.input} />
+          </View>
+
+          <TextInput value={paymentMethod} onChangeText={setPaymentMethod} placeholder="Payment method" placeholderTextColor="#70808c" style={styles.fullInput} />
+          <TextInput value={notes} onChangeText={setNotes} placeholder="Transaction note" placeholderTextColor="#70808c" style={styles.fullInput} />
+          <TextInput value={tags} onChangeText={setTags} placeholder="Tags (comma separated)" placeholderTextColor="#70808c" style={styles.fullInput} />
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Pressable onPress={onSave} disabled={isSaving} style={styles.primaryBtn}>
+          <Text style={styles.primaryBtnText}>{isSaving ? 'Saving...' : 'Edit Transaction'}</Text>
+        </Pressable>
+        <Pressable onPress={onDelete} style={styles.deleteBtn}>
+          <Ionicons name="trash-outline" size={14} color="#d79f9f" />
+          <Text style={styles.deleteText}>Delete Transaction</Text>
+        </Pressable>
       </ScrollView>
     </Screen>
   );
 };
+
+const styles = StyleSheet.create({
+  content: { paddingBottom: 8 },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
+    borderWidth: 1, borderColor: 'rgba(154,170,184,0.2)', borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 8, backgroundColor: 'rgba(12, 19, 33, 0.78)',
+  },
+  iconBtn: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: '#dbe3ea', fontSize: 20, fontWeight: '800' },
+  heroWrap: { alignItems: 'center', marginBottom: 10 },
+  statusPill: {
+    borderWidth: 1, borderColor: 'rgba(154,170,184,0.26)', borderRadius: 10,
+    minHeight: 26, paddingHorizontal: 10, textAlignVertical: 'center', color: '#c7d4de',
+    fontSize: 14, fontWeight: '700',
+  },
+  heroAmount: { marginTop: 8, color: '#14e0f9', fontSize: 20, fontWeight: '800' },
+  heroTitle: { marginTop: 4, color: '#dbe3ea', fontSize: 18, fontWeight: '700' },
+  card: {
+    borderWidth: 1, borderColor: 'rgba(154,170,184,0.24)', borderRadius: 12,
+    backgroundColor: 'rgba(17,25,39,0.82)', padding: 10, marginBottom: 10,
+  },
+  label: { color: '#95a7b3', fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  chipsRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
+  chip: {
+    minHeight: 34, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(154,170,184,0.2)',
+    backgroundColor: 'rgba(17,25,39,0.82)', paddingHorizontal: 10, justifyContent: 'center',
+  },
+  chipActive: { borderColor: '#12dff8', backgroundColor: 'rgba(7, 47, 62, 0.52)' },
+  chipInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chipText: { color: '#9aaab6', fontSize: 14, fontWeight: '600' },
+  chipTextActive: { color: '#cbf8ff' },
+  typeRow: {
+    flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(154,170,184,0.18)', borderRadius: 12,
+    padding: 4, backgroundColor: 'rgba(12, 20, 34, 0.85)', marginBottom: 8,
+  },
+  typeBtn: { flex: 1, minHeight: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  typeBtnActive: { backgroundColor: '#1bdcf7' },
+  typeText: { color: '#8293a0', fontSize: 14, fontWeight: '600' },
+  typeTextActive: { color: '#00343f', fontWeight: '800' },
+  gridRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  input: {
+    flex: 1, minHeight: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(154,170,184,0.2)',
+    backgroundColor: 'rgba(17,25,39,0.82)', color: '#d5dfe7', fontSize: 14, paddingHorizontal: 10, paddingVertical: 0,
+  },
+  fullInput: {
+    minHeight: 38, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(154,170,184,0.2)',
+    backgroundColor: 'rgba(17,25,39,0.82)', color: '#d5dfe7', fontSize: 14, paddingHorizontal: 10, paddingVertical: 0,
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    minHeight: 42, borderRadius: 12, borderWidth: 1, borderColor: '#49d6e7',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5, 12, 24, 0.86)',
+  },
+  primaryBtnText: { color: '#d9f8ff', fontSize: 18, fontWeight: '700' },
+  deleteBtn: {
+    marginTop: 8, minHeight: 36, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 6,
+  },
+  deleteText: { color: '#d79f9f', fontSize: 18, fontWeight: '600' },
+  error: { color: '#ff8089', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+});

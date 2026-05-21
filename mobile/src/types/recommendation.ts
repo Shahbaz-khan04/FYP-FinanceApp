@@ -13,3 +13,19 @@ export type RecommendationSummary = {
   recommendations: RecommendationItem[];
   generatedAt: string;
 };
+
+export type AiRecommendationItem = {
+  title: string;
+  message: string;
+  action: string;
+  priority: 'high' | 'medium' | 'low';
+};
+
+export type AiRecommendationSummary = {
+  month: string;
+  model: string;
+  source: 'cache' | 'fresh';
+  generatedAt: string;
+  summary: string;
+  recommendations: AiRecommendationItem[];
+};

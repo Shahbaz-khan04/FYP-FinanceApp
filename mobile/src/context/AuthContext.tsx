@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createContext,
   type PropsWithChildren,
@@ -15,14 +15,34 @@ import type { AuthResponse, AuthUser, UserSettings } from '../types/auth';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
+// Temporarily disabled secure-store path due to Expo Go runtime crash:
+// "Cannot find native module 'ExpoCryptoAES'".
+// Re-enable secure-store when using a custom dev client or fixed Expo runtime.
+// const getSecureStore = () => {
+//   try {
+//     // Lazy require prevents startup crash in Expo Go runtimes missing native secure-store deps.
+//     // eslint-disable-next-line @typescript-eslint/no-var-requires
+//     return require('expo-secure-store') as {
+//       getItemAsync: (key: string) => Promise<string | null>;
+//       setItemAsync: (key: string, value: string) => Promise<void>;
+//       deleteItemAsync: (key: string) => Promise<void>;
+//     };
+//   } catch {
+//     return null;
+//   }
+// };
+
 const authStorage = {
   async getItem() {
     if (Platform.OS === 'web') {
       if (typeof window === 'undefined') return null;
       return window.localStorage.getItem(AUTH_TOKEN_KEY);
     }
-
-    return SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+    // const secureStore = getSecureStore();
+    // if (secureStore) {
+    //   return secureStore.getItemAsync(AUTH_TOKEN_KEY);
+    // }
+    return AsyncStorage.getItem(AUTH_TOKEN_KEY);
   },
   async setItem(value: string) {
     if (Platform.OS === 'web') {
@@ -30,8 +50,12 @@ const authStorage = {
       window.localStorage.setItem(AUTH_TOKEN_KEY, value);
       return;
     }
-
-    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, value);
+    // const secureStore = getSecureStore();
+    // if (secureStore) {
+    //   await secureStore.setItemAsync(AUTH_TOKEN_KEY, value);
+    //   return;
+    // }
+    await AsyncStorage.setItem(AUTH_TOKEN_KEY, value);
   },
   async deleteItem() {
     if (Platform.OS === 'web') {
@@ -39,8 +63,12 @@ const authStorage = {
       window.localStorage.removeItem(AUTH_TOKEN_KEY);
       return;
     }
-
-    await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    // const secureStore = getSecureStore();
+    // if (secureStore) {
+    //   await secureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    //   return;
+    // }
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
   },
 };
 

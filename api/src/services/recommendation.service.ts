@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
+import { env } from '../config/env.js';
 import { supabase } from '../db/supabase.js';
 import { currencyService } from './currency.service.js';
+import { openaiAdviceService } from './openaiAdvice.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 type RecommendationType =
@@ -258,6 +261,68 @@ export const recommendationService = {
       month: selectedMonth,
       recommendations,
       generatedAt: new Date().toISOString(),
+    };
+  },
+
+  async getAiRecommendations(userId: string, month?: string) {
+    const db = requireDb();
+    const selectedMonth = month ?? currentMonth();
+    const { data: cached, error: readError } = await db
+      .from('ai_recommendation_runs')
+      .select('result_json,model,created_at')
+      .eq('user_id', userId)
+      .eq('month', selectedMonth)
+      .eq('prompt_version', 'v1')
+      .maybeSingle<{ result_json: any; model: string; created_at: string }>();
+    if (readError) {
+      throw new HttpError(500, 'AI_RECOMMEND_READ_FAILED', 'Could not load AI recommendations');
+    }
+    if (cached?.result_json) {
+      return {
+        month: selectedMonth,
+        model: cached.model,
+        source: 'cache',
+        generatedAt: cached.created_at,
+        ...cached.result_json,
+      };
+    }
+
+    const base = await this.getRecommendations(userId, selectedMonth);
+    const { preferredCurrency } = await currencyService.getRatesForUser(userId);
+    const ai = await openaiAdviceService.generatePersonalizedAdvice({
+      month: selectedMonth,
+      preferredCurrency,
+      rulesBasedRecommendations: base.recommendations,
+    });
+
+    const row = {
+      summary: ai.summary,
+      recommendations: ai.recommendations,
+      baseRecommendations: base.recommendations,
+    };
+
+    const { error: saveError } = await db.from('ai_recommendation_runs').upsert(
+      {
+        id: randomUUID(),
+        user_id: userId,
+        month: selectedMonth,
+        model: 'openai:' + env.OPENAI_MODEL,
+        prompt_version: 'v1',
+        result_json: row,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,month,prompt_version' },
+    );
+    if (saveError) {
+      throw new HttpError(500, 'AI_RECOMMEND_SAVE_FAILED', 'Could not save AI recommendations');
+    }
+
+    return {
+      month: selectedMonth,
+      model: 'openai:' + env.OPENAI_MODEL,
+      source: 'fresh',
+      generatedAt: new Date().toISOString(),
+      ...row,
     };
   },
 };

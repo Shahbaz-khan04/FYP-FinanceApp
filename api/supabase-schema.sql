@@ -282,3 +282,241 @@ create table if not exists public.statement_exports (
 );
 
 create index if not exists idx_statement_exports_user_created on public.statement_exports(user_id, created_at desc);
+
+create table if not exists public.push_tokens (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  platform text not null check (platform in ('ios', 'android')),
+  expo_push_token text not null,
+  device_name text null,
+  is_active boolean not null default true,
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(user_id, expo_push_token)
+);
+
+create index if not exists idx_push_tokens_user_active on public.push_tokens(user_id, is_active);
+
+create table if not exists public.ai_recommendation_runs (
+  id uuid primary key,
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  month char(7) not null,
+  model text not null,
+  prompt_version text not null default 'v1',
+  result_json jsonb not null,
+  created_at timestamptz not null default now(),
+  unique(user_id, month, prompt_version)
+);
+
+create index if not exists idx_ai_recommendation_runs_user_month on public.ai_recommendation_runs(user_id, month);
+
+-- Demo history seed for FYP showcase:
+-- Populates the most recently created user with rich data for the past 2 months.
+do $$
+declare
+  v_user_id uuid;
+  v_now date := (now() at time zone 'utc')::date;
+  v_month_0 text := to_char(date_trunc('month', v_now), 'YYYY-MM');
+  v_month_1 text := to_char((date_trunc('month', v_now) - interval '1 month'), 'YYYY-MM');
+  v_month_2 text := to_char((date_trunc('month', v_now) - interval '2 month'), 'YYYY-MM');
+  v_start_m1 date := (date_trunc('month', v_now) - interval '1 month')::date;
+  v_start_m2 date := (date_trunc('month', v_now) - interval '2 month')::date;
+
+  c_salary uuid;
+  c_freelance uuid;
+  c_food uuid;
+  c_transport uuid;
+  c_rent uuid;
+  c_bills uuid;
+  c_shopping uuid;
+  c_health uuid;
+  c_entertainment uuid;
+  c_business uuid;
+begin
+  select id into v_user_id
+  from public.app_users
+  order by created_at desc
+  limit 1;
+
+  if v_user_id is null then
+    raise notice 'No app_users found. Seed skipped.';
+    return;
+  end if;
+
+  select id into c_salary from public.categories where user_id = v_user_id and type = 'income' and name = 'Salary' limit 1;
+  select id into c_freelance from public.categories where user_id = v_user_id and type = 'income' and name = 'Freelance' limit 1;
+  select id into c_food from public.categories where user_id = v_user_id and type = 'expense' and name = 'Food' limit 1;
+  select id into c_transport from public.categories where user_id = v_user_id and type = 'expense' and name = 'Transport' limit 1;
+  select id into c_rent from public.categories where user_id = v_user_id and type = 'expense' and name = 'Rent' limit 1;
+  select id into c_bills from public.categories where user_id = v_user_id and type = 'expense' and name = 'Bills' limit 1;
+  select id into c_shopping from public.categories where user_id = v_user_id and type = 'expense' and name = 'Shopping' limit 1;
+  select id into c_health from public.categories where user_id = v_user_id and type = 'expense' and name = 'Health' limit 1;
+  select id into c_entertainment from public.categories where user_id = v_user_id and type = 'expense' and name = 'Entertainment' limit 1;
+  select id into c_business from public.categories where user_id = v_user_id and type = 'expense' and name = 'Business' limit 1;
+
+  -- Budget plans for last 2 months (methodology showcase)
+  insert into public.budget_plans (id, user_id, month, methodology, total_income, created_at, updated_at)
+  values
+    (gen_random_uuid(), v_user_id, v_month_2, 'envelope', null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, 'zero_based', 4200, now(), now())
+  on conflict (user_id, month) do update
+  set methodology = excluded.methodology,
+      total_income = excluded.total_income,
+      updated_at = now();
+
+  -- Category budgets for last 2 months
+  insert into public.budgets (id, user_id, month, category_id, planned_amount, planned_percent, created_at, updated_at)
+  values
+    (gen_random_uuid(), v_user_id, v_month_2, c_food, 420, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_2, c_transport, 220, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_2, c_rent, 1200, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_2, c_bills, 300, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_2, c_shopping, 260, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_food, 450, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_transport, 250, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_rent, 1200, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_bills, 350, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_health, 280, null, now(), now()),
+    (gen_random_uuid(), v_user_id, v_month_1, c_business, 500, null, now(), now())
+  on conflict (user_id, month, category_id) do update
+  set planned_amount = excluded.planned_amount,
+      planned_percent = excluded.planned_percent,
+      updated_at = now();
+
+  -- Dense transaction history (2 past months + current month)
+  insert into public.transactions (id, user_id, amount, type, category_id, date, currency, payment_method, notes, tags, created_at, updated_at)
+  values
+    -- month -2 incomes
+    (gen_random_uuid(), v_user_id, 2500, 'income', c_salary, v_start_m2 + 0, 'USD', 'Bank Transfer', 'Monthly salary', array['salary'], now(), now()),
+    (gen_random_uuid(), v_user_id, 650, 'income', c_freelance, v_start_m2 + 8, 'USD', 'Wise', 'Client website payment', array['freelance','client-a'], now(), now()),
+    -- month -2 expenses
+    (gen_random_uuid(), v_user_id, 1200, 'expense', c_rent, v_start_m2 + 1, 'USD', 'Bank Transfer', 'Apartment rent', array['fixed'], now(), now()),
+    (gen_random_uuid(), v_user_id, 145, 'expense', c_food, v_start_m2 + 2, 'USD', 'Card', 'Groceries - supermarket', array['grocery'], now(), now()),
+    (gen_random_uuid(), v_user_id, 48, 'expense', c_transport, v_start_m2 + 3, 'USD', 'Cash', 'Fuel refill', array['car'], now(), now()),
+    (gen_random_uuid(), v_user_id, 96, 'expense', c_bills, v_start_m2 + 4, 'USD', 'Card', 'Electricity bill', array['utility'], now(), now()),
+    (gen_random_uuid(), v_user_id, 72, 'expense', c_entertainment, v_start_m2 + 5, 'USD', 'Card', 'Streaming + cinema', array['lifestyle'], now(), now()),
+    (gen_random_uuid(), v_user_id, 215, 'expense', c_shopping, v_start_m2 + 10, 'USD', 'Card', 'Clothes and essentials', array['shopping'], now(), now()),
+    (gen_random_uuid(), v_user_id, 62, 'expense', c_health, v_start_m2 + 13, 'USD', 'Card', 'Pharmacy + vitamins', array['health'], now(), now()),
+    (gen_random_uuid(), v_user_id, 105, 'expense', c_food, v_start_m2 + 16, 'USD', 'Card', 'Groceries - weekly stock', array['grocery'], now(), now()),
+    (gen_random_uuid(), v_user_id, 38, 'expense', c_transport, v_start_m2 + 18, 'USD', 'Cash', 'Ride sharing', array['transport'], now(), now()),
+    (gen_random_uuid(), v_user_id, 89, 'expense', c_bills, v_start_m2 + 22, 'USD', 'Card', 'Internet + mobile', array['utility'], now(), now()),
+    (gen_random_uuid(), v_user_id, 310, 'expense', c_business, v_start_m2 + 24, 'USD', 'Card', 'Design tools + subscriptions', array['business'], now(), now()),
+
+    -- month -1 incomes
+    (gen_random_uuid(), v_user_id, 2500, 'income', c_salary, v_start_m1 + 0, 'USD', 'Bank Transfer', 'Monthly salary', array['salary'], now(), now()),
+    (gen_random_uuid(), v_user_id, 720, 'income', c_freelance, v_start_m1 + 7, 'USD', 'Wise', 'Client maintenance retainer', array['freelance','client-b'], now(), now()),
+    (gen_random_uuid(), v_user_id, 340, 'income', c_freelance, v_start_m1 + 19, 'USD', 'Payoneer', 'Small UI contract', array['freelance','client-c'], now(), now()),
+    -- month -1 expenses
+    (gen_random_uuid(), v_user_id, 1200, 'expense', c_rent, v_start_m1 + 1, 'USD', 'Bank Transfer', 'Apartment rent', array['fixed'], now(), now()),
+    (gen_random_uuid(), v_user_id, 152, 'expense', c_food, v_start_m1 + 2, 'USD', 'Card', 'Groceries + snacks', array['grocery'], now(), now()),
+    (gen_random_uuid(), v_user_id, 55, 'expense', c_transport, v_start_m1 + 3, 'USD', 'Cash', 'Fuel refill', array['car'], now(), now()),
+    (gen_random_uuid(), v_user_id, 102, 'expense', c_bills, v_start_m1 + 4, 'USD', 'Card', 'Electricity bill', array['utility'], now(), now()),
+    (gen_random_uuid(), v_user_id, 91, 'expense', c_entertainment, v_start_m1 + 6, 'USD', 'Card', 'Gaming + subscriptions', array['lifestyle'], now(), now()),
+    (gen_random_uuid(), v_user_id, 244, 'expense', c_shopping, v_start_m1 + 9, 'USD', 'Card', 'Household + clothes', array['shopping'], now(), now()),
+    (gen_random_uuid(), v_user_id, 74, 'expense', c_health, v_start_m1 + 12, 'USD', 'Card', 'Doctor visit', array['health'], now(), now()),
+    (gen_random_uuid(), v_user_id, 168, 'expense', c_food, v_start_m1 + 14, 'USD', 'Card', 'Groceries - mid month', array['grocery'], now(), now()),
+    (gen_random_uuid(), v_user_id, 42, 'expense', c_transport, v_start_m1 + 15, 'USD', 'Cash', 'Ride sharing', array['transport'], now(), now()),
+    (gen_random_uuid(), v_user_id, 118, 'expense', c_bills, v_start_m1 + 21, 'USD', 'Card', 'Internet + mobile', array['utility'], now(), now()),
+    (gen_random_uuid(), v_user_id, 690, 'expense', c_business, v_start_m1 + 23, 'USD', 'Card', 'Laptop repair + software annual', array['business'], now(), now()),
+    (gen_random_uuid(), v_user_id, 295, 'expense', c_food, v_start_m1 + 26, 'USD', 'Card', 'Large family event groceries', array['event','grocery'], now(), now()),
+
+    -- current month samples to keep dashboards lively
+    (gen_random_uuid(), v_user_id, 2500, 'income', c_salary, date_trunc('month', v_now)::date + 0, 'USD', 'Bank Transfer', 'Monthly salary', array['salary'], now(), now()),
+    (gen_random_uuid(), v_user_id, 180, 'expense', c_food, date_trunc('month', v_now)::date + 2, 'USD', 'Card', 'Groceries', array['grocery'], now(), now()),
+    (gen_random_uuid(), v_user_id, 57, 'expense', c_transport, date_trunc('month', v_now)::date + 3, 'USD', 'Cash', 'Fuel', array['transport'], now(), now()),
+    (gen_random_uuid(), v_user_id, 1200, 'expense', c_rent, date_trunc('month', v_now)::date + 1, 'USD', 'Bank Transfer', 'Apartment rent', array['fixed'], now(), now()),
+    (gen_random_uuid(), v_user_id, 121, 'expense', c_bills, date_trunc('month', v_now)::date + 5, 'USD', 'Card', 'Utilities', array['utility'], now(), now());
+
+  -- Goals
+  insert into public.goals (id, user_id, title, target_amount, saved_amount, deadline, is_completed, created_at, updated_at)
+  values
+    (gen_random_uuid(), v_user_id, 'Emergency Fund', 6000, 2300, (v_now + interval '150 day')::date, false, now(), now()),
+    (gen_random_uuid(), v_user_id, 'New Laptop', 1800, 1250, (v_now + interval '70 day')::date, false, now(), now()),
+    (gen_random_uuid(), v_user_id, 'Vacation', 2500, 900, (v_now + interval '210 day')::date, false, now(), now())
+  on conflict do nothing;
+
+  -- Recurring transactions
+  insert into public.recurring_transactions
+    (id, user_id, amount, category_id, frequency, custom_days, is_paused, start_date, next_run_date, last_run_date, created_at, updated_at)
+  values
+    (gen_random_uuid(), v_user_id, 1200, c_rent, 'monthly', null, false, v_start_m2, (date_trunc('month', v_now) + interval '1 day')::date, (date_trunc('month', v_now) - interval '1 month' + interval '1 day')::date, now(), now()),
+    (gen_random_uuid(), v_user_id, 100, c_bills, 'monthly', null, false, v_start_m2 + 4, (date_trunc('month', v_now) + interval '5 day')::date, (date_trunc('month', v_now) - interval '1 month' + interval '5 day')::date, now(), now()),
+    (gen_random_uuid(), v_user_id, 55, c_transport, 'weekly', null, false, v_start_m2 + 3, (v_now + interval '2 day')::date, (v_now - interval '5 day')::date, now(), now())
+  on conflict do nothing;
+
+  -- Anomaly alerts samples
+  insert into public.anomaly_alerts
+    (id, user_id, transaction_id, type, severity, title, message, metadata, is_dismissed, created_at, dismissed_at)
+  values
+    (gen_random_uuid(), v_user_id, null, 'spending_spike', 'medium', 'Monthly spending spike', 'Your spending in the current month is above normal trend.', '{"month":"current"}'::jsonb, false, now() - interval '2 day', null),
+    (gen_random_uuid(), v_user_id, null, 'category_overspending', 'high', 'Food category overspending', 'Food expenses are significantly above your baseline.', '{"category":"Food"}'::jsonb, false, now() - interval '1 day', null)
+  on conflict do nothing;
+
+  -- Notifications samples
+  insert into public.app_notifications
+    (id, user_id, type, title, message, metadata, dedupe_key, is_read, is_dismissed, created_at, read_at, dismissed_at)
+  values
+    (gen_random_uuid(), v_user_id, 'budget_overspending', 'Budget overspending alert', 'Food exceeded monthly budget by 85.00.', '{"category":"Food"}'::jsonb, 'demo-budget-food-' || v_month_1, false, false, now() - interval '1 day', null, null),
+    (gen_random_uuid(), v_user_id, 'goal_milestone', 'Goal milestone reached', 'New Laptop: reached 69% progress.', '{"goal":"New Laptop"}'::jsonb, 'demo-goal-laptop', false, false, now() - interval '20 hours', null, null),
+    (gen_random_uuid(), v_user_id, 'bill_reminder', 'Bill reminder', 'Utilities are due tomorrow.', '{"nextRun":"tomorrow"}'::jsonb, 'demo-bill-' || v_month_0, false, false, now() - interval '8 hours', null, null)
+  on conflict do nothing;
+
+  -- Receipts samples
+  insert into public.receipts
+    (id, user_id, image_url, ocr_raw_text, extracted_amount, extracted_merchant, extracted_date, linked_transaction_id, created_at, updated_at)
+  values
+    (gen_random_uuid(), v_user_id, 'https://images.unsplash.com/photo-1556740749-887f6717d7e4', 'Total 152.00\nMerchant SuperMart\nDate', 152, 'SuperMart', v_start_m1 + 2, null, now() - interval '28 day', now() - interval '28 day'),
+    (gen_random_uuid(), v_user_id, 'https://images.unsplash.com/photo-1563013544-824ae1b704d3', 'Total 102.00\nMerchant Utility Office\nDate', 102, 'Utility Office', v_start_m1 + 4, null, now() - interval '26 day', now() - interval '26 day')
+  on conflict do nothing;
+
+  -- Statement archive samples
+  insert into public.statement_exports
+    (id, user_id, period_type, reference_date, start_date, end_date, file_name, csv_content, created_at)
+  values
+    (gen_random_uuid(), v_user_id, 'monthly', (date_trunc('month', v_now) - interval '1 month')::date, v_start_m1, (date_trunc('month', v_now) - interval '1 day')::date,
+      'statement_monthly_' || v_month_1 || '.csv',
+      'Statement Type,MONTHLY
+Reference Date,' || (date_trunc('month', v_now) - interval '1 month')::date || '
+Range Start,' || v_start_m1 || '
+Range End,' || (date_trunc('month', v_now) - interval '1 day')::date || '
+Currency,USD',
+      now() - interval '3 day'),
+    (gen_random_uuid(), v_user_id, 'weekly', (v_now - interval '7 day')::date, (v_now - interval '13 day')::date, (v_now - interval '7 day')::date,
+      'statement_weekly_recent.csv',
+      'Statement Type,WEEKLY
+Reference Date,' || (v_now - interval '7 day')::date || '
+Range Start,' || (v_now - interval '13 day')::date || '
+Range End,' || (v_now - interval '7 day')::date || '
+Currency,USD',
+      now() - interval '2 day')
+  on conflict do nothing;
+
+  -- AI recommendation cache sample
+  insert into public.ai_recommendation_runs
+    (id, user_id, month, model, prompt_version, result_json, created_at)
+  values
+    (
+      gen_random_uuid(),
+      v_user_id,
+      v_month_1,
+      'openai:gpt-4.1-mini',
+      'v1',
+      jsonb_build_object(
+        'summary', 'You had strong income but category variance suggests tighter food and business spend controls.',
+        'recommendations', jsonb_build_array(
+          jsonb_build_object('title', 'Cap food spending weekly', 'message', 'Set a weekly food cap and track daily.', 'action', 'Create a weekly envelope for food at 110 USD.', 'priority', 'high'),
+          jsonb_build_object('title', 'Stagger business purchases', 'message', 'Split large business expenses across billing cycles.', 'action', 'Move non-urgent software renewals to next month.', 'priority', 'medium'),
+          jsonb_build_object('title', 'Boost laptop goal contributions', 'message', 'You are close to your laptop target.', 'action', 'Increase monthly savings by 120 USD for this goal.', 'priority', 'medium')
+        ),
+        'baseRecommendations', jsonb_build_array()
+      ),
+      now() - interval '1 day'
+    )
+  on conflict (user_id, month, prompt_version) do update
+  set result_json = excluded.result_json,
+      model = excluded.model,
+      created_at = excluded.created_at;
+
+  raise notice 'Demo seed applied for user %', v_user_id;
+end $$;

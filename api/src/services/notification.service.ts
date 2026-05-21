@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { pushService } from './push.service.js';
+import { recommendationService } from './recommendation.service.js';
 import { supabase } from '../db/supabase.js';
 import type { AppNotification, AppNotificationType } from '../types/notification.js';
 import { HttpError } from '../utils/httpError.js';
@@ -225,7 +227,55 @@ export const notificationService = {
       }
     }
 
+    if (prefs.anomalyAlerts) {
+      try {
+        const ai = await recommendationService.getAiRecommendations(userId, selectedMonth);
+        const top = ai.recommendations[0];
+        if (top) {
+          const created = await this.create(userId, {
+            type: 'anomaly_alert',
+            title: `AI Advice: ${top.title}`,
+            message: top.message,
+            dedupeKey: `ai-advice-${selectedMonth}-${top.title}`,
+            metadata: {
+              month: selectedMonth,
+              source: 'llm',
+              action: top.action,
+              priority: top.priority,
+              summary: ai.summary,
+            },
+          });
+          if (created) generated += 1;
+        }
+      } catch {
+        // Keep notifications resilient even if LLM is unavailable.
+      }
+    }
+
     return { generated };
+  },
+
+  async dispatchUnreadToPush(userId: string) {
+    const db = requireDb();
+    const { data, error } = await db
+      .from('app_notifications')
+      .select('id,title,message,metadata')
+      .eq('user_id', userId)
+      .eq('is_dismissed', false)
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) throw new HttpError(500, 'PUSH_DISPATCH_READ_FAILED', 'Could not load unread notifications');
+    if (!(data ?? []).length) return { sent: 0, tokens: 0 };
+    return pushService.sendToUser(
+      userId,
+      (data ?? []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        message: row.message,
+        metadata: row.metadata ?? {},
+      })),
+    );
   },
 
   toView(row: AppNotification) {
